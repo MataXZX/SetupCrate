@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <LinearGradientBrush x:Key="BgWindow" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#5E0A111F" Offset="0"/>
+        <GradientStop Color="#5E14203A" Offset="0.55"/>
+        <GradientStop Color="#5E251B40" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#8FD0FF" Offset="0"/>
+        <GradientStop Color="#7C9CFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="BgSurface" Color="#8C121C2E"/>
+    <SolidColorBrush x:Key="BgCard" Color="#99131E31"/>
+    <SolidColorBrush x:Key="CardBg" Color="#99131E31"/>
+    <SolidColorBrush x:Key="BgHover" Color="#AA1F2B45"/>
+    <SolidColorBrush x:Key="BgSelected" Color="#CC2B4372"/>
+    <SolidColorBrush x:Key="Border" Color="#3DFFFFFF"/>
+    <SolidColorBrush x:Key="BorderStrong" Color="#66FFFFFF"/>
+    <SolidColorBrush x:Key="Fg" Color="#F2F7FF"/>
+    <SolidColorBrush x:Key="FgMuted" Color="#A9BCD6"/>
+    <SolidColorBrush x:Key="Accent" Color="#8FD0FF"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#B5E0FF"/>
+    <SolidColorBrush x:Key="AccentPressed" Color="#6FAFE0"/>
+    <SolidColorBrush x:Key="OnAccent" Color="#06101E"/>
+    <SolidColorBrush x:Key="AccentSoft" Color="#338FD0FF"/>
+    <SolidColorBrush x:Key="Danger" Color="#FF8A8A"/>
+    <SolidColorBrush x:Key="Success" Color="#7CFFB2"/>
+    <SolidColorBrush x:Key="LogBg" Color="#66101B2B"/>
+
+    <SolidColorBrush x:Key="OkBg" Color="#3326A06A"/>
+    <SolidColorBrush x:Key="OkFg" Color="#8DFFBF"/>
+    <SolidColorBrush x:Key="WarnBg" Color="#33FFC24D"/>
+    <SolidColorBrush x:Key="WarnFg" Color="#FFD37A"/>
+    <SolidColorBrush x:Key="ErrBg" Color="#33FF6B6B"/>
+    <SolidColorBrush x:Key="ErrFg" Color="#FFA3A3"/>
+    <SolidColorBrush x:Key="WindowBackdrop" Color="#00000000"/>
+</ResourceDictionary>
