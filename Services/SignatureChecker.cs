@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace SetupCrate.Services;
 
-/// <summary>Проверка Authenticode-подписи файла (как в свойствах файла → Цифровая подпись).</summary>
 public static class SignatureChecker
 {
     private static readonly Guid WinTrustAction = new("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
@@ -47,7 +46,6 @@ public static class SignatureChecker
     [DllImport("wintrust.dll", ExactSpelling = true, CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern uint WinVerifyTrust(IntPtr hwnd, ref Guid pgActionID, ref WINTRUST_DATA pWVTData);
 
-    /// <summary>Возвращает текст статуса: ✓/⚠ + подпись, либо причину.</summary>
     public static string Check(string path)
     {
         if (!File.Exists(path)) return Loc.T("✗ файл не найден");

@@ -8,12 +8,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SetupCrate</AssemblyName>
     <RootNamespace>SetupCrate</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.1.5</Version>
+    <AssemblyVersion>1.1.5.0</AssemblyVersion>
+    <FileVersion>1.1.5.0</FileVersion>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <Product>SetupCrate</Product>
     <AssemblyTitle>SetupCrate</AssemblyTitle>
+    <Company>SetupCrate</Company>
+    <Copyright>Copyright © 2026 SetupCrate</Copyright>
+    <FileDescription>SetupCrate — installer catalog for Windows</FileDescription>
+    <RepositoryUrl>https://github.com/MataXZX/SetupCrate</RepositoryUrl>
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>

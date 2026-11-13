@@ -30,9 +30,8 @@ public sealed class CatalogStore
         }
         catch (JsonException)
         {
-            // Битый файл не теряем: уводим в сторону, чтобы можно было восстановить руками.
             var broken = FilePath + ".broken-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
-            try { File.Move(FilePath, broken, true); } catch { /* ignore */ }
+            try { File.Move(FilePath, broken, true); } catch {  }
             return new CatalogFile();
         }
     }

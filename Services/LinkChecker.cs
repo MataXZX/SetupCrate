@@ -40,7 +40,6 @@ public static class LinkChecker
 
             if (size is null or <= 0)
             {
-                // Некоторые серверы не отдают размер на HEAD — уточняем Range-запросом.
                 var probe = await ProbeWithGetAsync(item, ct).ConfigureAwait(false);
                 return probe with { Message = Loc.T("✓ ссылка работает") };
             }

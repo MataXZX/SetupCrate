@@ -35,8 +35,9 @@ public partial class MainWindow : Window
     private DateTime _lastInstalledScan = DateTime.MinValue;
     private Point _dragStart;
     private CategoryEntry? _dragEntry;
+    private Rect _restoreBounds;
+    private bool _isMaximized;
 
-    /// <summary>Открытый пакет (витрина), null — обычный каталог.</summary>
     private Preset? _activePreset;
     private ICollectionView? _packView;
 
@@ -78,9 +79,8 @@ public partial class MainWindow : Window
         RebuildCategories();
         UpdateThemeButton();
         UpdateEmptyState();
-        BtnLang.Content = Loc.Current == AppLang.En ? "EN" : "RU";
 
-        try { Directory.CreateDirectory(DownloadDir); } catch { /* создадим при загрузке */ }
+        try { Directory.CreateDirectory(DownloadDir); } catch {  }
 
         SetStatus(_items.Count == 0
             ? Loc.T("Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик.")
@@ -99,8 +99,6 @@ public partial class MainWindow : Window
     private static bool IsRealCategory(string name) =>
         !string.Equals(name, AllCategory, StringComparison.CurrentCultureIgnoreCase) &&
         !string.Equals(name, NoCategory, StringComparison.CurrentCultureIgnoreCase);
-
-    // ---------- каталог ----------
 
     private void Save()
     {
@@ -130,7 +128,6 @@ public partial class MainWindow : Window
             if (!names.Contains(name, StringComparer.CurrentCultureIgnoreCase)) names.Add(name);
         }
 
-        // «Без категории» показываем, только если в ней что-то есть.
         if (counts.ContainsKey(NoCategory) && !names.Contains(NoCategory, StringComparer.CurrentCultureIgnoreCase))
             names.Add(NoCategory);
 
@@ -196,8 +193,6 @@ public partial class MainWindow : Window
             .Where(c => !string.IsNullOrWhiteSpace(c) && IsRealCategory(c))
             .Distinct(StringComparer.CurrentCultureIgnoreCase);
 
-    // ---------- пакеты (отдельное пространство) ----------
-
     private List<CatalogItem> GetPackItems(Preset preset)
     {
         if (_packs.TryGetValue(preset.Name, out var cached)) return cached;
@@ -207,7 +202,7 @@ public partial class MainWindow : Window
             Name = app.Name,
             Url = app.Url,
             Site = app.Site,
-            Notes = app.Notes,
+            Notes = Loc.T(app.Notes),
             Category = "Пакет"
         }).ToList();
 
@@ -224,7 +219,6 @@ public partial class MainWindow : Window
         _packView = new CollectionViewSource { Source = items }.View;
         _packView.Filter = PackFilter;
         ItemsList.ItemsSource = _packView;
-
 
         SetBusy(_busy);
         UpdateEmptyState();
@@ -248,14 +242,17 @@ public partial class MainWindow : Window
         SetStatus(Loc.T("Открыт каталог."));
     }
 
-
     private void Categories_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_activePreset != null) ExitPack();
         RefreshView();
     }
 
-    // ---------- категории ----------
+    private void SelectCategory(string name)
+    {
+        var entry = _categories.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.CurrentCultureIgnoreCase));
+        if (entry != null) ListCategories.SelectedItem = entry;
+    }
 
     private void AddCategory()
     {
@@ -388,12 +385,6 @@ public partial class MainWindow : Window
         return menu;
     }
 
-    public ContextMenu CategoryMenuForTest(string name)
-    {
-        var entry = _categories.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.CurrentCultureIgnoreCase));
-        return BuildCategoryMenu(entry);
-    }
-
     private static CategoryEntry? FindCategory(object? source) =>
         FindCategoryItem(source)?.DataContext as CategoryEntry;
 
@@ -422,8 +413,6 @@ public partial class MainWindow : Window
 
         return null;
     }
-
-    // ---------- перетаскивание категорий ----------
 
     private void Categories_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -505,8 +494,6 @@ public partial class MainWindow : Window
         MoveCategoryBefore(dragged, insertBefore);
     }
 
-    // ---------- установленные программы ----------
-
     private IEnumerable<CatalogItem> AllKnownItems()
     {
         foreach (var item in _items) yield return item;
@@ -547,8 +534,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // ---------- тема ----------
-
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -572,18 +557,68 @@ public partial class MainWindow : Window
 
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ChangedButton == MouseButton.Left &&
-            e.OriginalSource is not TextBox and not Button)
+        if (e.ChangedButton != MouseButton.Left || e.OriginalSource is TextBox or Button)
+            return;
+
+        if (e.ClickCount == 2)
         {
-            try { DragMove(); } catch { /* окно в движении */ }
+            ToggleMaximize();
+            return;
         }
+
+        try { DragMove(); } catch {  }
     }
 
     private void BtnMin_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
+    private void BtnMax_Click(object sender, RoutedEventArgs e) => ToggleMaximize();
 
-    // ---------- команды каталога ----------
+    private void ToggleMaximize()
+    {
+        if (_isMaximized)
+        {
+            Left = _restoreBounds.Left;
+            Top = _restoreBounds.Top;
+            Width = _restoreBounds.Width;
+            Height = _restoreBounds.Height;
+            _isMaximized = false;
+        }
+        else
+        {
+            _restoreBounds = new Rect(Left, Top, Width, Height);
+
+            var area = SystemParameters.WorkArea;
+            Left = area.Left;
+            Top = area.Top;
+            Width = area.Width;
+            Height = area.Height;
+            _isMaximized = true;
+        }
+
+        UpdateMaxGlyph();
+    }
+
+    private void UpdateMaxGlyph()
+    {
+        if (BtnMax != null)
+            BtnMax.Content = _isMaximized ? "❐" : "□";
+    }
+
+    private void Window_StateChanged(object sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            _isMaximized = true;
+            UpdateMaxGlyph();
+        }
+        else if (WindowState == WindowState.Normal && _isMaximized)
+        {
+            _isMaximized = false;
+            UpdateMaxGlyph();
+        }
+    }
+
+    private void BtnClose_Click(object sender, RoutedEventArgs e) => Close();
 
     private void BtnAdd_Click(object sender, RoutedEventArgs e)
     {
@@ -685,8 +720,6 @@ public partial class MainWindow : Window
         DeleteItems(selected);
     }
 
-    // ---------- загрузка ----------
-
     private List<CatalogItem> CurrentSelection()
     {
         if (_activePreset != null)
@@ -764,8 +797,6 @@ public partial class MainWindow : Window
         SetStatus(Loc.T("Отмена…"));
     }
 
-    // ---------- отметить все ----------
-
     private void BtnToggleAll_Click(object sender, RoutedEventArgs e)
     {
         if (_activePreset != null)
@@ -837,9 +868,6 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(CatalogItem.IsSelected)) UpdateToggleLabels();
     }
 
-    // ---------- меню записи ----------
-
-
     private void BtnPacksToggle_Click(object sender, RoutedEventArgs e)
     {
         var open = BtnPacksToggle.IsChecked == true;
@@ -850,15 +878,6 @@ public partial class MainWindow : Window
     private void Preset_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: Preset preset }) ShowPack(preset);
-    }
-
-    private void BtnMore_Click(object sender, RoutedEventArgs e)
-    {
-        var menu = new ContextMenu();
-        menu.Items.Add(MenuItemFor(Loc.T("Экспорт каталога…"), ExportCatalog));
-        menu.Items.Add(MenuItemFor(Loc.T("Импорт каталога…"), ImportCatalog));
-        menu.PlacementTarget = BtnMore;
-        menu.IsOpen = true;
     }
 
     private void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
@@ -879,51 +898,30 @@ public partial class MainWindow : Window
         TxtPlaceholder.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    public void SetSearchForTest(string text)
+    private void BtnSettings_Click(object sender, RoutedEventArgs e)
     {
-        TxtSearch.Text = text;
-        TxtSearch.Focus();
-        TxtSearch.CaretIndex = text.Length;
-    }
+        var window = new SettingsWindow(_settings, _baseDir, ImportCatalog, ExportCatalog, ApplyLanguage)
+        {
+            Owner = this
+        };
 
-    private void BtnLang_Click(object sender, RoutedEventArgs e)
-    {
-        var menu = new ContextMenu();
-
-        var ru = new MenuItem { Header = "Русский", IsCheckable = true, IsChecked = Loc.Current == AppLang.Ru };
-        ru.Click += (_, _) => SetLanguage(AppLang.Ru);
-
-        var en = new MenuItem { Header = "English", IsCheckable = true, IsChecked = Loc.Current == AppLang.En };
-        en.Click += (_, _) => SetLanguage(AppLang.En);
-
-        menu.Items.Add(ru);
-        menu.Items.Add(en);
-        menu.PlacementTarget = BtnLang;
-        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
-        menu.IsOpen = true;
-    }
-
-    private void SetLanguage(AppLang lang)
-    {
-        if (Loc.Current == lang) return;
-
-        Loc.Apply(lang);
-        _settings.Language = lang == AppLang.Ru ? "ru" : "en";
-        SettingsStore.Save(_baseDir, _settings);
+        window.ShowDialog();
         ApplyLanguage();
     }
 
-    /// <summary>Обновляет тексты, заданные из кода, после смены языка.</summary>
     private void ApplyLanguage()
     {
         Title = $"SetupCrate {AppVersion}";
-        BtnLang.Content = Loc.Current == AppLang.En ? "EN" : "RU";
+
         UpdateThemeButton();
         UpdateToggleLabels();
         BtnLogToggle.Content = TxtLog.Visibility == Visibility.Visible ? Loc.T("Скрыть лог") : Loc.T("Лог");
 
         RebuildCategories();
         foreach (var item in _items) item.NotifyMetaText();
+
+        _packs.Clear();
+        if (_activePreset != null) ShowPack(_activePreset);
 
         PacksList.ItemsSource = null;
         PacksList.ItemsSource = Presets.All;
@@ -1014,7 +1012,6 @@ public partial class MainWindow : Window
         }
     }
 
-
     private void SiteLink_Click(object sender, RoutedEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: CatalogItem item }) OpenSite(item);
@@ -1028,8 +1025,6 @@ public partial class MainWindow : Window
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
         catch (Exception ex) { SetStatus(Loc.F("Не удалось открыть сайт: {0}", ex.Message)); }
     }
-
-    // ---------- импорт / экспорт ----------
 
     private void ExportCatalog()
     {
@@ -1062,7 +1057,7 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = Loc.T(Loc.T("Импорт каталога")),
+            Title = Loc.T("Импорт каталога"),
             Filter = Loc.T("Каталог SetupCrate (*.json)|*.json|Все файлы (*.*)|*.*")
         };
         if (dialog.ShowDialog() != true) return;
@@ -1087,7 +1082,7 @@ public partial class MainWindow : Window
         var answer = MessageBox.Show(
             $"В файле записей: {imported.Items.Count}.\n\n" +
             "«Да» — заменить текущий каталог.\n«Нет» — добавить к текущему (дубликаты пропущу).",
-            Loc.T(Loc.T("Импорт каталога")), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            Loc.T("Импорт каталога"), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Cancel) return;
 
         if (answer == MessageBoxResult.Yes)
@@ -1116,8 +1111,6 @@ public partial class MainWindow : Window
         UpdateEmptyState();
         SetStatus(Loc.F("Импорт завершён. Записей сейчас: {0}.", _items.Count));
     }
-
-    // ---------- загрузка файлов ----------
 
     private async Task DownloadManyAsync(IReadOnlyList<CatalogItem> list)
     {
@@ -1229,8 +1222,6 @@ public partial class MainWindow : Window
         return text;
     }
 
-    // ---------- проверка ссылок ----------
-
     private async Task CheckLinksAsync(IReadOnlyList<CatalogItem> list)
     {
         if (_busy) return;
@@ -1289,8 +1280,6 @@ public partial class MainWindow : Window
             SetStatus(dead == 0 ? Loc.T("Все ссылки отвечают.") : Loc.F("Проверено {0}, проблемных: {1}.", list.Count, dead));
         }
     }
-
-    // ---------- запуск установщиков ----------
 
     private async Task InstallManyAsync(IReadOnlyList<CatalogItem> list)
     {
@@ -1362,8 +1351,6 @@ public partial class MainWindow : Window
             .FirstOrDefault();
     }
 
-    // ---------- вспомогательное ----------
-
     private void SetItem(CatalogItem item, string status, long? size = null)
     {
         item.StatusText = status;
@@ -1385,7 +1372,7 @@ public partial class MainWindow : Window
         BtnInstall.IsEnabled = !busy;
         BtnCheck.IsEnabled = !busy;
         BtnOpen.IsEnabled = !busy;
-        BtnMore.IsEnabled = !busy;
+
         BtnCancel.IsEnabled = busy;
     }
 
@@ -1407,57 +1394,4 @@ public partial class MainWindow : Window
         Save();
     }
 
-    // ---------- диагностика (скриншоты/тесты) ----------
-
-    public void SelectCategory(string name)
-    {
-        var entry = _categories.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.CurrentCultureIgnoreCase));
-        if (entry != null) ListCategories.SelectedItem = entry;
-    }
-
-    public ContextMenu RowMenuForTest => _itemMenu;
-
-    public void PrepareRowMenuForTest()
-    {
-        _menuTarget = _items.FirstOrDefault();
-        _itemMenu.PlacementTarget = ItemsList;
-        _itemMenu.IsOpen = true;
-    }
-
-    public Task CheckLinksForTestAsync() => CheckLinksAsync(_items.ToList());
-
-    public void ToggleCategoriesForTest() => BtnToggleAll_Click(BtnToggleAll, new RoutedEventArgs());
-
-    public void TogglePacksForTest() => BtnTogglePacks_Click(BtnTogglePacks, new RoutedEventArgs());
-
-    public void OpenPacksForTest()
-    {
-        BtnPacksToggle.IsChecked = true;
-        BtnPacksToggle_Click(BtnPacksToggle, new RoutedEventArgs());
-    }
-
-    public void PrepareDragPreviewForTest()
-    {
-        foreach (var item in _items.Take(3)) item.IsSelected = true;
-
-        var target = _categories.Skip(2).FirstOrDefault();
-        var container = target != null
-            ? ListCategories.ItemContainerGenerator.ContainerFromItem(target) as ListBoxItem
-            : null;
-
-        if (container == null) return;
-
-        var topLeft = container.TranslatePoint(new Point(0, 0), DropLayer);
-        Canvas.SetLeft(DropLine, 8);
-        Canvas.SetTop(DropLine, topLeft.Y + container.ActualHeight - 1);
-        DropLine.Width = Math.Max(40, DropLayer.ActualWidth - 16);
-        DropLine.Visibility = Visibility.Visible;
-    }
-
-    public void ApplyPresetByName(string name)
-    {
-        var preset = Presets.All.FirstOrDefault(p =>
-            string.Equals(p.Name, name, StringComparison.CurrentCultureIgnoreCase));
-        if (preset != null) ShowPack(preset);
-    }
 }

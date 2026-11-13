@@ -4,7 +4,6 @@ using System.Windows.Data;
 
 namespace SetupCrate;
 
-/// <summary>Пустая строка — Collapsed, непустая — Visible.</summary>
 public sealed class EmptyToCollapsedConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

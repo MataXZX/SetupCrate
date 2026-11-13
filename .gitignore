@@ -5,6 +5,3 @@ catalog.json
 settings.json
 *.part
 *.log
-crash.log
-probe.log
-shot-trace.log

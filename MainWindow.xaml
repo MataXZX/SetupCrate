@@ -7,14 +7,14 @@
         WindowStartupLocation="CenterScreen" FontSize="13"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Foreground="{DynamicResource Fg}" Icon="app.ico"
-        Activated="Window_Activated" Closing="Window_Closing">
+        Activated="Window_Activated" Closing="Window_Closing" StateChanged="Window_StateChanged">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome ResizeBorderThickness="6" CaptionHeight="0" CornerRadius="0" GlassFrameThickness="0"/>
     </shell:WindowChrome.WindowChrome>
     <Grid>
     <Border CornerRadius="0" Background="{DynamicResource BgWindow}" BorderBrush="{DynamicResource Border}" BorderThickness="1" ClipToBounds="True">
         <DockPanel>
-            <!-- шапка -->
+            
             <Border x:Name="HeaderBar" DockPanel.Dock="Top" Background="{DynamicResource BgSurface}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="22,11"
                     MouseLeftButtonDown="Header_MouseLeftButtonDown">
@@ -22,6 +22,8 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
@@ -44,12 +46,15 @@
                     <Button x:Name="BtnTheme" Grid.Column="3" Style="{StaticResource GhostBtn}" FontSize="12.5"
                             Padding="12,6" Content="{loc:Tr Text='Тема'}" Click="BtnTheme_Click"/>
 
-                    <Button Grid.Column="4" Content="—" Style="{StaticResource WinButton}" Margin="10,0,0,0" Click="BtnMin_Click"/>
-                    <Button Grid.Column="5" Content="✕" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnClose_Click"/>
+                    <Button Grid.Column="4" Content="{loc:Tr Text='Настройки'}" Style="{StaticResource GhostBtn}" FontSize="12.5"
+                            Padding="12,6" Margin="10,0,0,0" Click="BtnSettings_Click"/>
+                    <Button Grid.Column="5" Content="—" Style="{StaticResource WinButton}" Margin="10,0,0,0" Click="BtnMin_Click"/>
+                    <Button x:Name="BtnMax" Grid.Column="6" Content="□" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnMax_Click"/>
+                    <Button Grid.Column="7" Content="✕" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnClose_Click"/>
                 </Grid>
             </Border>
 
-            <!-- статус -->
+            
             <Border DockPanel.Dock="Bottom" Background="{DynamicResource BgSurface}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Padding="22,9">
                 <Grid>
@@ -64,16 +69,13 @@
                         <TextBlock x:Name="TxtStatus" FontSize="12" Foreground="{DynamicResource FgMuted}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                        <Button x:Name="BtnLogToggle" Content="{loc:Tr Text='Лог'}" Style="{StaticResource GhostBtn}"
-                                Padding="12,6" Click="BtnLogToggle_Click"/>
-                        <Button x:Name="BtnLang" Content="RU" Style="{StaticResource GhostBtn}" FontSize="12"
-                                Padding="9,6" Margin="6,0,0,0" Click="BtnLang_Click" ToolTip="Language"/>
-                    </StackPanel>
+                    <Button x:Name="BtnLogToggle" Grid.Column="1" Content="{loc:Tr Text='Лог'}"
+                            Style="{StaticResource GhostBtn}" Padding="12,6" Margin="14,0,0,0"
+                            VerticalAlignment="Center" Click="BtnLogToggle_Click"/>
                 </Grid>
             </Border>
 
-            <!-- категории -->
+            
             <Border DockPanel.Dock="Left" Width="222" Background="{DynamicResource BgSurface}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0" Padding="12,16">
                 <DockPanel>
@@ -153,15 +155,13 @@
                 </DockPanel>
             </Border>
 
-            <!-- контент -->
+            
             <Grid Margin="22,16,22,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-
-
 
                 <WrapPanel Grid.Row="0" Margin="0,0,0,10">
                     <Button x:Name="BtnDownload" Content="{loc:Tr Text='Скачать отмеченные'}" Style="{StaticResource PrimaryBtn}"
@@ -178,8 +178,7 @@
                             Margin="0,0,4,6" Click="BtnAdd_Click"/>
                     <Button x:Name="BtnDelete" Content="{loc:Tr Text='Удалить'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,4,6" Click="BtnDeleteSelected_Click"/>
-                    <Button x:Name="BtnMore" Content="{loc:Tr Text='Ещё'}" Style="{StaticResource GhostBtn}"
-                            Margin="0,0,4,6" Click="BtnMore_Click"/>
+
                     <Button x:Name="BtnCancel" Content="{loc:Tr Text='Отмена'}" Style="{StaticResource GhostBtn}"
                             IsEnabled="False" Margin="0,0,4,6" Click="BtnCancel_Click"/>
                 </WrapPanel>
@@ -216,6 +215,10 @@
                                                         <TextBlock Text="{Binding InstalledText}" FontSize="12"
                                                                    Foreground="{DynamicResource OkFg}"/>
                                                     </StackPanel>
+                                                    <TextBlock Text="{Binding Notes}" FontSize="12"
+                                                               Foreground="{DynamicResource FgMuted}"
+                                                               Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding Notes, Converter={StaticResource EmptyToCollapsed}}"/>
                                                 </StackPanel>
 
                                                 <Border Grid.Column="2" Style="{StaticResource Pill}" Margin="10,0">

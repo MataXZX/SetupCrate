@@ -11,19 +11,16 @@ public enum AppLang
     En
 }
 
-/// <summary>Простая локализация: русский текст — ключ, при английском языке подменяется переводом.</summary>
 public sealed class Loc : INotifyPropertyChanged
 {
     public static Loc Instance { get; } = new();
 
     public static AppLang Current { get; private set; } = AppLang.Ru;
 
-    /// <summary>Растёт при каждой смене языка — по этому свойству обновляются привязки в XAML.</summary>
     public int Version { get; private set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Вызывается после смены языка, чтобы окна обновили тексты, заданные из кода.</summary>
     public static event Action? Changed;
 
     public static string T(string ru) =>
@@ -57,7 +54,6 @@ public sealed class Loc : INotifyPropertyChanged
 
     private static readonly Dictionary<string, string> Map = new(StringComparer.Ordinal)
     {
-        // ---------- главное окно ----------
         ["Поиск…"] = "Search…",
         ["Тема"] = "Theme",
         ["Лог"] = "Log",
@@ -84,13 +80,11 @@ public sealed class Loc : INotifyPropertyChanged
         ["Без категории"] = "No category",
         ["Пакет"] = "Pack",
 
-        // ---------- темы ----------
         ["Светлая"] = "Light",
         ["Тёмная"] = "Dark",
         ["Стекло"] = "Glass",
         ["Тема: {0}"] = "Theme: {0}",
 
-        // ---------- статусы и сообщения (главное окно) ----------
         ["Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик."] =
             "The catalog is empty. Press “Add”: a name and a direct installer link.",
         ["Записей: {0}. Папка загрузок: {1}"] = "Entries: {0}. Download folder: {1}",
@@ -161,7 +155,6 @@ public sealed class Loc : INotifyPropertyChanged
         ["отмечено"] = "selected",
         ["снято"] = "cleared",
 
-        // ---------- статусы элементов ----------
         ["скачивание…"] = "downloading…",
         ["скачивание {0}"] = "downloading {0}",
         ["отменено"] = "cancelled",
@@ -176,7 +169,6 @@ public sealed class Loc : INotifyPropertyChanged
         ["запуск установщика…"] = "launching installer…",
         ["✓ установщик завершён (код {0})"] = "✓ installer finished (code {0})",
 
-        // ---------- лог ----------
         ["Старт загрузки: {0} шт. → {1}"] = "Download started: {0} file(s) → {1}",
         ["{0}: ошибка — {1}"] = "{0}: error — {1}",
         ["Готово: скачано {0} из {1}"] = "Done: {0} of {1} downloaded",
@@ -190,7 +182,6 @@ public sealed class Loc : INotifyPropertyChanged
         ["Не удалось прочитать список установленных программ: {0}"] =
             "Could not read the list of installed programs: {0}",
 
-        // ---------- диалоги ----------
         ["Название программы *"] = "Program name *",
         ["Официальный сайт (для справки и поиска ссылок)"] = "Official site (reference and link search)",
         ["Прямая ссылка на установщик *"] = "Direct installer link *",
@@ -220,7 +211,6 @@ public sealed class Loc : INotifyPropertyChanged
         ["Не удалось загрузить страницу: {0}"] = "Could not load the page: {0}",
         ["Название не может быть пустым."] = "The name cannot be empty.",
 
-        // ---------- сервисы ----------
         ["Некорректная ссылка: нужен полный http(s)-адрес."] = "Invalid link: a full http(s) address is required.",
         ["по ссылке страница сайта, а не установщик — нужна прямая ссылка на файл"] =
             "the link points to a website page, not an installer — a direct file link is required",
@@ -244,10 +234,56 @@ public sealed class Loc : INotifyPropertyChanged
         ["Базовый"] = "Basic",
         ["Игры"] = "Games",
         ["Работа"] = "Work",
+
+        ["Быстрый браузер с открытым кодом"] = "Fast open-source browser",
+        ["Архиватор: ZIP, 7z и другие форматы"] = "Archiver for ZIP, 7z and more",
+        ["Плеер, открывает почти любое видео"] = "Plays almost any video format",
+        ["Лёгкий редактор текста и кода"] = "Lightweight text and code editor",
+        ["Торрент-клиент без рекламы"] = "Torrent client with no ads",
+        ["Крупнейший магазин и лаунчер игр"] = "The biggest game store and launcher",
+        ["Лаунчер и магазин Ubisoft"] = "Ubisoft launcher and store",
+        ["Лаунчер и магазин EA"] = "EA launcher and store",
+        ["Все игры из разных лаунчеров в одном месте"] = "All your games from every launcher in one place",
+        ["Лаунчер Minecraft с модами"] = "Modded Minecraft launcher",
+        ["Офисный пакет: документы, таблицы, презентации"] = "Office suite: documents, spreadsheets, slides",
+        ["Почтовый клиент"] = "Email client",
+        ["Редактор кода"] = "Code editor",
+        ["Система контроля версий"] = "Version control system",
+        ["Менеджер паролей, всё хранится локально"] = "Password manager, everything stored locally",
+        ["Открытые инструменты для творчества"] = "Creative tools, open source",
+        ["Мессенджер с облачными чатами"] = "Messenger with cloud chats",
+        ["Голосовой чат и сообщества"] = "Voice chat and communities",
+
+        ["Настройки"] = "Settings",
+        ["Язык"] = "Language",
+        ["Как в системе"] = "System default",
+        ["Русский"] = "Russian",
+        ["Каталог"] = "Catalog",
+        ["Импорт каталога…"] = "Import catalog…",
+        ["Экспорт каталога…"] = "Export catalog…",
+        ["Обновления"] = "Updates",
+        ["Текущая версия: {0}"] = "Current version: {0}",
+        ["Проверить обновления"] = "Check for updates",
+        ["Проверяю…"] = "Checking…",
+        ["Установлена последняя версия."] = "You have the latest version.",
+        ["Не удалось проверить обновления: {0}"] = "Could not check for updates: {0}",
+        ["Доступна новая версия {0}."] = "Version {0} is available.",
+        ["Доступна новая версия {0}. Открыть страницу загрузки?"] = "Version {0} is available. Open the download page?",
+        ["О программе"] = "About",
+        ["О SetupCrate"] = "About SetupCrate",
+        ["Каталог установщиков для Windows"] = "Installer catalog for Windows",
+        ["Веб-страница"] = "Website",
+        ["Поблагодарить"] = "Say thanks",
+        ["Лицензия"] = "License",
+        ["Закрыть"] = "Close",
+        ["Открыть сайт проекта"] = "Open the project page",
+        ["Собрано на .NET 10 и WPF"] = "Built with .NET 10 and WPF",
+        ["Версия {0}"] = "Version {0}",
+        ["Copyright © 2026 SetupCrate"] = "Copyright © 2026 SetupCrate",
+        ["Настройки приложения"] = "Application settings",
     };
 }
 
-/// <summary>Разметка в XAML: Text="{loc:Tr 'Отмена'}" — перевод обновляется при смене языка.</summary>
 public sealed class TrExtension : MarkupExtension
 {
     public string Text { get; set; } = "";

@@ -41,18 +41,14 @@ public sealed class CatalogItem : INotifyPropertyChanged
 
     public string Notes { get => _notes; set => Set(ref _notes, value); }
 
-    /// <summary>Флаги тихой установки, например /S или /VERYSILENT /NORESTART. Пусто = обычный запуск.</summary>
     public string SilentArgs { get => _silentArgs; set => Set(ref _silentArgs, value); }
 
-    /// <summary>Куда ставить (подсказка), например C:\Program1\7-Zip. Не влияет на скачивание.</summary>
     public string TargetDir { get => _targetDir; set => Set(ref _targetDir, value); }
 
-    /// <summary>Ожидаемый SHA-256 файла (необязательно).</summary>
     public string Sha256 { get => _sha256; set => Set(ref _sha256, value); }
 
     public DateTime? LastDownloadUtc { get; set; }
 
-    /// <summary>Имя скачанного файла в папке downloads (заполняется после загрузки).</summary>
     public string? FileName { get; set; }
 
     [JsonIgnore] public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }

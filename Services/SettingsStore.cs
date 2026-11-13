@@ -34,6 +34,6 @@ public static class SettingsStore
             File.WriteAllText(PathFor(baseDir),
                 JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
         }
-        catch { /* настройки не критичны */ }
+        catch {  }
     }
 }

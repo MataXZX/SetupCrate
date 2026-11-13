@@ -4,7 +4,6 @@ using System.Windows.Interop;
 
 namespace SetupCrate.Services;
 
-/// <summary>Акриловый blur окна через недокументированный SetWindowCompositionAttribute + скругление DWM.</summary>
 public static class AcrylicHelper
 {
     private const int WcaAccentPolicy = 19;
@@ -43,7 +42,6 @@ public static class AcrylicHelper
             var corner = glass ? 2 : 1;
             DwmSetWindowAttribute(hwnd, DwmwaWindowCornerPreference, ref corner, sizeof(int));
 
-            // Windows 11: системный акрил (Mica/Acrylic) через DWM.
             var backdrop = glass ? 3 : 1;
             DwmSetWindowAttribute(hwnd, 38, ref backdrop, sizeof(int));
 
@@ -52,9 +50,8 @@ public static class AcrylicHelper
 
             var policy = new AccentPolicy
             {
-                AccentState = glass ? 4 : 0, // 4 = ACCENT_ENABLE_ACRYLICBLURBEHIND
+                AccentState = glass ? 4 : 0,
                 AccentFlags = 2,
-                // ABGR: альфа B4, оттенок #101524
                 GradientColor = glass ? unchecked((int)0xB4180F0A) : 0,
                 AnimationId = 0
             };
@@ -79,7 +76,6 @@ public static class AcrylicHelper
         }
         catch
         {
-            // На старых сборках Windows эффект просто не включится.
         }
     }
 }

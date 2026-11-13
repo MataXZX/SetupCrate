@@ -44,6 +44,19 @@ Output: `bin\Release\net10.0-windows\win-x64\publish\SetupCrate.exe` — a self-
 
 Everything stays local. `catalog.json` is portable.
 
+## Windows SmartScreen
+
+The release binary is not code-signed yet, so Windows may show **"Windows protected your PC"** on the first launch. To run it:
+
+1. Click **More info** → **Run anyway**.
+2. Optionally check the file hash against the SHA-256 published in the release notes:
+
+```
+certutil -hashfile SetupCrate.exe SHA256
+```
+
+Why this happens: SmartScreen trusts only files signed with a recognized code-signing certificate (and ones with enough download reputation). Signing future builds with a trusted certificate is the only way to remove the warning completely.
+
 ## License
 
 [MIT](LICENSE)

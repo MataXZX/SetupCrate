@@ -5,7 +5,6 @@ namespace SetupCrate.Services;
 
 public static class ProcessRunner
 {
-    /// <summary>Запускает установщик и ждёт завершения. Пустые args = обычный интерактивный запуск.</summary>
     public static async Task<int> RunAsync(string filePath, string args, CancellationToken ct)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();

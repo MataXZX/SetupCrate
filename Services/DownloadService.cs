@@ -27,10 +27,6 @@ public sealed class DownloadService
         return client;
     }
 
-    /// <summary>
-    /// Скачивает установщик в папку dir. Если рядом уже есть .part-файл от прошлой попытки,
-    /// продолжает с того места (HTTP Range), а не качает заново.
-    /// </summary>
     public async Task<DownloadResult> DownloadAsync(CatalogItem item, string dir, IProgress<double>? progress, CancellationToken ct)
     {
         if (!Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) ||
@@ -47,7 +43,6 @@ public sealed class DownloadService
         var existing = File.Exists(part) ? new FileInfo(part).Length : 0;
         if (existing > 0 && resolved.Length is > 0 && existing >= resolved.Length)
         {
-            // .part уже полного размера — просто переименуем.
             File.Move(part, target, true);
             existing = 0;
             return await FinishAsync(item, target, false, ct).ConfigureAwait(false);
@@ -81,7 +76,7 @@ public sealed class DownloadService
         }
 
         if (existing > 0 && response.StatusCode != HttpStatusCode.PartialContent)
-            existing = 0; // сервер не умеет Range — качаем заново
+            existing = 0;
 
         if (existing == 0)
         {
@@ -159,7 +154,6 @@ public sealed class DownloadService
         }
         catch
         {
-            // HEAD не поддерживается или запрещён — пойдём обычным GET.
         }
 
         return new Resolved(uri, NameFromUri(uri) ?? Sanitize(item.Name) + ".exe", null);

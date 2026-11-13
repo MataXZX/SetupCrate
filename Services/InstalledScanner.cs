@@ -5,7 +5,6 @@ namespace SetupCrate.Services;
 
 public sealed record InstalledApp(string DisplayName, string? Version);
 
-/// <summary>Ищет установленные программы в реестре (Uninstall) и сверяет их с каталогом.</summary>
 public static class InstalledScanner
 {
     private static readonly string[] UninstallPaths =
@@ -48,7 +47,6 @@ public static class InstalledScanner
                 }
                 catch
                 {
-                    // Нет доступа к ветке — пропускаем.
                 }
             }
         }
@@ -56,7 +54,6 @@ public static class InstalledScanner
         return result;
     }
 
-    /// <summary>Сравнивает название из каталога с установленным (без учёта регистра, пробелов и знаков).</summary>
     public static bool Matches(string catalogName, string installedName)
     {
         var catalog = Normalize(catalogName);
