@@ -50,7 +50,7 @@ public static class SignatureChecker
     /// <summary>Возвращает текст статуса: ✓/⚠ + подпись, либо причину.</summary>
     public static string Check(string path)
     {
-        if (!File.Exists(path)) return "✗ файл не найден";
+        if (!File.Exists(path)) return Loc.T("✗ файл не найден");
 
         try
         {
@@ -83,7 +83,7 @@ public static class SignatureChecker
                 WinVerifyTrust(IntPtr.Zero, ref action2, ref data);
 
                 if (result == 0)
-                    return "✓ подписано: " + TryGetSigner(path);
+                    return Loc.F("✓ подписано: {0}", TryGetSigner(path));
 
                 return "⚠ " + Describe(result);
             }
@@ -94,7 +94,7 @@ public static class SignatureChecker
         }
         catch (Exception ex)
         {
-            return "⚠ проверка подписи не удалась: " + ex.Message;
+            return Loc.F("⚠ проверка подписи не удалась: {0}", ex.Message);
         }
     }
 
@@ -110,17 +110,17 @@ public static class SignatureChecker
         }
         catch
         {
-            return "(подпись действительна)";
+            return Loc.T("(подпись действительна)");
         }
     }
 
     private static string Describe(uint code) => code switch
     {
-        0x800B0100 => "нет встроенной подписи (для установщиков это повод насторожиться; у системных файлов Windows подпись каталожная)",
-        0x800B0003 => "подпись не распознана",
-        0x800B0001 => "провайдер подписи не найден",
-        0x800B0109 => "подпись есть, но корневой сертификат не доверенный",
-        0x800B0101 => "сертификат подписи истёк",
-        _ => $"подпись недействительна (0x{code:X8})"
+        0x800B0100 => Loc.T("нет встроенной подписи (для установщиков это повод насторожиться; у системных файлов Windows подпись каталожная)"),
+        0x800B0003 => Loc.T("подпись не распознана"),
+        0x800B0001 => Loc.T("провайдер подписи не найден"),
+        0x800B0109 => Loc.T("подпись есть, но корневой сертификат не доверенный"),
+        0x800B0101 => Loc.T("сертификат подписи истёк"),
+        _ => Loc.F("подпись недействительна (0x{0})", code.ToString("X8"))
     };
 }

@@ -6,6 +6,7 @@ namespace SetupCrate.Services;
 public sealed class AppSettings
 {
     public string Theme { get; set; } = "Light";
+    public string Language { get; set; } = "auto";
 }
 
 public static class SettingsStore

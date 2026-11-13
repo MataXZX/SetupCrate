@@ -1,3 +1,5 @@
+using SetupCrate.Services;
+
 namespace SetupCrate.Models;
 
 public sealed class CategoryEntry
@@ -10,4 +12,6 @@ public sealed class CategoryEntry
 
     public string Name { get; }
     public int Count { get; }
+
+    public string DisplayName => Loc.T(Name);
 }

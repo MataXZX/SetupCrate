@@ -35,7 +35,7 @@ public sealed class DownloadService
     {
         if (!Uri.TryCreate(item.Url, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
-            throw new InvalidOperationException("Некорректная ссылка: нужен полный http(s)-адрес.");
+            throw new InvalidOperationException(Loc.T("Некорректная ссылка: нужен полный http(s)-адрес."));
 
         Directory.CreateDirectory(dir);
 
@@ -77,7 +77,7 @@ public sealed class DownloadService
             (mediaType.Contains("text/html", StringComparison.OrdinalIgnoreCase) ||
              mediaType.Contains("xhtml", StringComparison.OrdinalIgnoreCase)))
         {
-            throw new InvalidOperationException("по ссылке страница сайта, а не установщик — нужна прямая ссылка на файл");
+            throw new InvalidOperationException(Loc.T("по ссылке страница сайта, а не установщик — нужна прямая ссылка на файл"));
         }
 
         if (existing > 0 && response.StatusCode != HttpStatusCode.PartialContent)

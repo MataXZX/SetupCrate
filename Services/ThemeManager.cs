@@ -44,9 +44,9 @@ public static class ThemeManager
 
     public static string DisplayName(AppTheme theme) => theme switch
     {
-        AppTheme.Light => "Светлая",
-        AppTheme.Dark => "Тёмная",
-        _ => "Стекло"
+        AppTheme.Light => Loc.T("Светлая"),
+        AppTheme.Dark => Loc.T("Тёмная"),
+        _ => Loc.T("Стекло")
     };
 
     public static AppTheme Parse(string? value) => value switch

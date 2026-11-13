@@ -78,12 +78,13 @@ public partial class MainWindow : Window
         RebuildCategories();
         UpdateThemeButton();
         UpdateEmptyState();
+        BtnLang.Content = Loc.Current == AppLang.En ? "EN" : "RU";
 
         try { Directory.CreateDirectory(DownloadDir); } catch { /* создадим при загрузке */ }
 
         SetStatus(_items.Count == 0
-            ? "Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик."
-            : $"Записей: {_items.Count}. Папка загрузок: {DownloadDir}");
+            ? Loc.T("Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик.")
+            : Loc.F("Записей: {0}. Папка загрузок: {1}", _items.Count, DownloadDir));
 
         _ = RefreshInstalledAsync();
     }
@@ -105,7 +106,7 @@ public partial class MainWindow : Window
     {
         _catalog.Items = _items.ToList();
         try { _store.Save(_catalog); }
-        catch (Exception ex) { SetStatus("Не удалось сохранить каталог: " + ex.Message); }
+        catch (Exception ex) { SetStatus(Loc.F("Не удалось сохранить каталог: {0}", ex.Message)); }
     }
 
     private void RebuildCategories()
@@ -228,7 +229,7 @@ public partial class MainWindow : Window
         SetBusy(_busy);
         UpdateEmptyState();
         UpdateToggleLabels();
-        SetStatus($"Открыт пакет «{preset.Name}». Это отдельный список — каталог не меняется.");
+        SetStatus(Loc.F("Открыт пакет «{0}». Это отдельный список — каталог не меняется.", preset.Name));
 
         _ = RefreshInstalledAsync();
     }
@@ -244,7 +245,7 @@ public partial class MainWindow : Window
         SetBusy(_busy);
         UpdateEmptyState();
         UpdateToggleLabels();
-        SetStatus("Открыт каталог.");
+        SetStatus(Loc.T("Открыт каталог."));
     }
 
 
@@ -258,14 +259,14 @@ public partial class MainWindow : Window
 
     private void AddCategory()
     {
-        var dialog = new InputDialog("Название новой категории:") { Owner = this };
+        var dialog = new InputDialog(Loc.T("Название новой категории:")) { Owner = this };
         if (dialog.ShowDialog() != true) return;
 
         var name = dialog.Value.Trim();
         if (!IsRealCategory(name) ||
             _categories.Any(c => string.Equals(c.Name, name, StringComparison.CurrentCultureIgnoreCase)))
         {
-            SetStatus("Такая категория уже есть.");
+            SetStatus(Loc.T("Такая категория уже есть."));
             return;
         }
 
@@ -273,12 +274,12 @@ public partial class MainWindow : Window
         Save();
         RebuildCategories();
         SelectCategory(name);
-        SetStatus("Категория добавлена: " + name);
+        SetStatus(Loc.F("Категория добавлена: {0}", name));
     }
 
     private void RenameCategory(string oldName)
     {
-        var dialog = new InputDialog($"Новое название для «{oldName}»:", oldName) { Owner = this };
+        var dialog = new InputDialog(Loc.F("Новое название для «{0}»:", oldName), oldName) { Owner = this };
         if (dialog.ShowDialog() != true) return;
 
         var newName = dialog.Value.Trim();
@@ -287,7 +288,7 @@ public partial class MainWindow : Window
         if (!IsRealCategory(newName) ||
             _categories.Any(c => string.Equals(c.Name, newName, StringComparison.CurrentCultureIgnoreCase)))
         {
-            SetStatus("Такая категория уже есть.");
+            SetStatus(Loc.T("Такая категория уже есть."));
             return;
         }
 
@@ -301,7 +302,7 @@ public partial class MainWindow : Window
         Save();
         RebuildCategories();
         SelectCategory(newName);
-        SetStatus($"Категория «{oldName}» переименована в «{newName}».");
+        SetStatus(Loc.F("Категория «{0}» переименована в «{1}».", oldName, newName));
     }
 
     private void DeleteCategory(string name)
@@ -321,7 +322,7 @@ public partial class MainWindow : Window
         Save();
         RebuildCategories();
         SelectCategory(AllCategory);
-        SetStatus($"Категория «{name}» удалена.");
+        SetStatus(Loc.F("Категория «{0}» удалена.", name));
     }
 
     private void MoveCategory(string name, int delta)
@@ -371,17 +372,17 @@ public partial class MainWindow : Window
     private ContextMenu BuildCategoryMenu(CategoryEntry? entry)
     {
         var menu = new ContextMenu();
-        menu.Items.Add(MenuItemFor("Новая категория…", AddCategory));
+        menu.Items.Add(MenuItemFor(Loc.T("Новая категория…"), AddCategory));
 
         if (entry != null && IsRealCategory(entry.Name))
         {
             var name = entry.Name;
             menu.Items.Add(new Separator());
-            menu.Items.Add(MenuItemFor("Переименовать…", () => RenameCategory(name)));
-            menu.Items.Add(MenuItemFor("Удалить", () => DeleteCategory(name)));
+            menu.Items.Add(MenuItemFor(Loc.T("Переименовать…"), () => RenameCategory(name)));
+            menu.Items.Add(MenuItemFor(Loc.T("Удалить"), () => DeleteCategory(name)));
             menu.Items.Add(new Separator());
-            menu.Items.Add(MenuItemFor("Выше", () => MoveCategory(name, -1)));
-            menu.Items.Add(MenuItemFor("Ниже", () => MoveCategory(name, 1)));
+            menu.Items.Add(MenuItemFor(Loc.T("Выше"), () => MoveCategory(name, -1)));
+            menu.Items.Add(MenuItemFor(Loc.T("Ниже"), () => MoveCategory(name, 1)));
         }
 
         return menu;
@@ -538,7 +539,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Log("Не удалось прочитать список установленных программ: " + ex.Message);
+            Log(Loc.F("Не удалось прочитать список установленных программ: {0}", ex.Message));
         }
         finally
         {
@@ -566,7 +567,7 @@ public partial class MainWindow : Window
     private void UpdateThemeButton()
     {
         if (BtnTheme != null)
-            BtnTheme.Content = "Тема: " + ThemeManager.DisplayName(ThemeManager.Current);
+            BtnTheme.Content = Loc.F("Тема: {0}", ThemeManager.DisplayName(ThemeManager.Current));
     }
 
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -588,7 +589,7 @@ public partial class MainWindow : Window
     {
         if (_activePreset != null)
         {
-            SetStatus("Сейчас открыт пакет. Вернись в каталог, чтобы добавить программу.");
+            SetStatus(Loc.T("Сейчас открыт пакет. Вернись в каталог, чтобы добавить программу."));
             return;
         }
 
@@ -596,7 +597,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true || dialog.Result == null) return;
 
         RegisterItem(dialog.Result);
-        SetStatus($"Добавлено: {dialog.Result.Name}");
+        SetStatus(Loc.F("Добавлено: {0}", dialog.Result.Name));
     }
 
     private void RegisterItem(CatalogItem item)
@@ -617,7 +618,7 @@ public partial class MainWindow : Window
     {
         if (_activePreset != null)
         {
-            SetStatus("Пакет — встроенный список, его записи не редактируются.");
+            SetStatus(Loc.T("Пакет — встроенный список, его записи не редактируются."));
             return;
         }
 
@@ -637,20 +638,20 @@ public partial class MainWindow : Window
 
         Save();
         RebuildCategories();
-        SetStatus($"Сохранено: {dialog.Result.Name}");
+        SetStatus(Loc.F("Сохранено: {0}", dialog.Result.Name));
     }
 
     private void DeleteItems(IReadOnlyList<CatalogItem> selected)
     {
         if (_activePreset != null)
         {
-            SetStatus("Пакет — встроенный список, из него ничего не удаляется.");
+            SetStatus(Loc.T("Пакет — встроенный список, из него ничего не удаляется."));
             return;
         }
 
         if (selected.Count == 0) return;
 
-        var answer = MessageBox.Show($"Удалить из каталога: {selected.Count} шт.?",
+        var answer = MessageBox.Show(Loc.F("Удалить из каталога: {0} шт.?", selected.Count),
             "SetupCrate", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (answer != MessageBoxResult.Yes) return;
 
@@ -663,21 +664,21 @@ public partial class MainWindow : Window
         Save();
         RebuildCategories();
         UpdateEmptyState();
-        SetStatus($"Удалено: {selected.Count}");
+        SetStatus(Loc.F("Удалено: {0}", selected.Count));
     }
 
     private void BtnDeleteSelected_Click(object sender, RoutedEventArgs e)
     {
         if (_activePreset != null)
         {
-            SetStatus("Это витрина пакета, а не каталог — удалять нечего. Вернись в каталог.");
+            SetStatus(Loc.T("Это витрина пакета, а не каталог — удалять нечего. Вернись в каталог."));
             return;
         }
 
         var selected = _items.Where(i => i.IsSelected).ToList();
         if (selected.Count == 0)
         {
-            SetStatus("Отметь галочками программы, которые нужно удалить.");
+            SetStatus(Loc.T("Отметь галочками программы, которые нужно удалить."));
             return;
         }
 
@@ -699,7 +700,7 @@ public partial class MainWindow : Window
         var list = CurrentSelection();
         if (list.Count == 0)
         {
-            SetStatus("Отметь галочками, что скачать.");
+            SetStatus(Loc.T("Отметь галочками, что скачать."));
             return;
         }
 
@@ -712,7 +713,7 @@ public partial class MainWindow : Window
 
         if (list.Count == 0)
         {
-            SetStatus("Список пуст — скачивать нечего.");
+            SetStatus(Loc.T("Список пуст — скачивать нечего."));
             return;
         }
 
@@ -724,7 +725,7 @@ public partial class MainWindow : Window
         var list = CurrentSelection();
         if (list.Count == 0)
         {
-            SetStatus("Отметь галочками, что устанавливать.");
+            SetStatus(Loc.T("Отметь галочками, что устанавливать."));
             return;
         }
 
@@ -737,7 +738,7 @@ public partial class MainWindow : Window
 
         if (list.Count == 0)
         {
-            SetStatus("Список пуст — проверять нечего.");
+            SetStatus(Loc.T("Список пуст — проверять нечего."));
             return;
         }
 
@@ -753,14 +754,14 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Не удалось открыть папку: " + ex.Message);
+            SetStatus(Loc.F("Не удалось открыть папку: {0}", ex.Message));
         }
     }
 
     private void BtnCancel_Click(object sender, RoutedEventArgs e)
     {
         _cts?.Cancel();
-        SetStatus("Отмена…");
+        SetStatus(Loc.T("Отмена…"));
     }
 
     // ---------- отметить все ----------
@@ -769,18 +770,18 @@ public partial class MainWindow : Window
     {
         if (_activePreset != null)
         {
-            SetStatus("Сейчас открыт пакет — для него кнопка ниже, в блоке «Пакеты».");
+            SetStatus(Loc.T("Сейчас открыт пакет — для него кнопка ниже, в блоке «Пакеты»."));
             return;
         }
 
-        ToggleSelection(CategoryTargets(), "Категории");
+        ToggleSelection(CategoryTargets(), Loc.T("Категории"));
     }
 
     private void BtnTogglePacks_Click(object sender, RoutedEventArgs e)
     {
         if (_activePreset == null)
         {
-            SetStatus("Сначала открой пакет в блоке «Пакеты».");
+            SetStatus(Loc.T("Сначала открой пакет в блоке «Пакеты»."));
             return;
         }
 
@@ -803,8 +804,8 @@ public partial class MainWindow : Window
         if (targets.Count == 0)
         {
             SetStatus(scope == "Пакет"
-                ? "В этом пакете нет программ."
-                : "В этой категории нечего отмечать.");
+                ? Loc.T("В этом пакете нет программ.")
+                : Loc.T("В этой категории нечего отмечать."));
             return;
         }
 
@@ -821,14 +822,14 @@ public partial class MainWindow : Window
         var categories = CategoryTargets();
         BtnToggleAll.Content = _activePreset == null &&
                                categories.Count > 0 && categories.All(i => i.IsSelected)
-            ? "Снять все"
-            : "Отметить все";
+            ? Loc.T("Снять все")
+            : Loc.T("Отметить все");
 
         var packs = _activePreset != null ? GetPackItems(_activePreset) : new List<CatalogItem>();
         if (BtnTogglePacks != null)
             BtnTogglePacks.Content = packs.Count > 0 && packs.All(i => i.IsSelected)
-                ? "Снять все"
-                : "Отметить все";
+                ? Loc.T("Снять все")
+                : Loc.T("Отметить все");
     }
 
     private void Item_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -854,8 +855,8 @@ public partial class MainWindow : Window
     private void BtnMore_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
-        menu.Items.Add(MenuItemFor("Экспорт каталога…", ExportCatalog));
-        menu.Items.Add(MenuItemFor("Импорт каталога…", ImportCatalog));
+        menu.Items.Add(MenuItemFor(Loc.T("Экспорт каталога…"), ExportCatalog));
+        menu.Items.Add(MenuItemFor(Loc.T("Импорт каталога…"), ImportCatalog));
         menu.PlacementTarget = BtnMore;
         menu.IsOpen = true;
     }
@@ -885,47 +886,98 @@ public partial class MainWindow : Window
         TxtSearch.CaretIndex = text.Length;
     }
 
+    private void BtnLang_Click(object sender, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu();
+
+        var ru = new MenuItem { Header = "Русский", IsCheckable = true, IsChecked = Loc.Current == AppLang.Ru };
+        ru.Click += (_, _) => SetLanguage(AppLang.Ru);
+
+        var en = new MenuItem { Header = "English", IsCheckable = true, IsChecked = Loc.Current == AppLang.En };
+        en.Click += (_, _) => SetLanguage(AppLang.En);
+
+        menu.Items.Add(ru);
+        menu.Items.Add(en);
+        menu.PlacementTarget = BtnLang;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
+    }
+
+    private void SetLanguage(AppLang lang)
+    {
+        if (Loc.Current == lang) return;
+
+        Loc.Apply(lang);
+        _settings.Language = lang == AppLang.Ru ? "ru" : "en";
+        SettingsStore.Save(_baseDir, _settings);
+        ApplyLanguage();
+    }
+
+    /// <summary>Обновляет тексты, заданные из кода, после смены языка.</summary>
+    private void ApplyLanguage()
+    {
+        Title = $"SetupCrate {AppVersion}";
+        BtnLang.Content = Loc.Current == AppLang.En ? "EN" : "RU";
+        UpdateThemeButton();
+        UpdateToggleLabels();
+        BtnLogToggle.Content = TxtLog.Visibility == Visibility.Visible ? Loc.T("Скрыть лог") : Loc.T("Лог");
+
+        RebuildCategories();
+        foreach (var item in _items) item.NotifyMetaText();
+
+        PacksList.ItemsSource = null;
+        PacksList.ItemsSource = Presets.All;
+
+        _itemMenu.Items.Clear();
+        BuildItemMenu();
+        UpdateEmptyState();
+
+        SetStatus(_items.Count == 0
+            ? Loc.T("Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик.")
+            : Loc.F("Записей: {0}. Папка загрузок: {1}", _items.Count, DownloadDir));
+    }
+
     private void BtnLogToggle_Click(object sender, RoutedEventArgs e)
     {
         var show = TxtLog.Visibility != Visibility.Visible;
         TxtLog.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
-        BtnLogToggle.Content = show ? "Скрыть лог" : "Лог";
+        BtnLogToggle.Content = show ? Loc.T("Скрыть лог") : Loc.T("Лог");
     }
 
     private void BuildItemMenu()
     {
-        _itemMenu.Items.Add(MenuItemFor("Скачать", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Скачать"), () =>
         {
             if (_menuTarget is { } item) _ = DownloadManyAsync(new[] { item });
         }));
-        _itemMenu.Items.Add(MenuItemFor("Установить", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Установить"), () =>
         {
             if (_menuTarget is { } item) _ = InstallManyAsync(new[] { item });
         }));
         _itemMenu.Items.Add(new Separator());
-        _itemMenu.Items.Add(MenuItemFor("Открыть сайт", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Открыть сайт"), () =>
         {
             if (_menuTarget is { } item) OpenSite(item);
         }));
-        _itemMenu.Items.Add(MenuItemFor("Скопировать ссылку", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Скопировать ссылку"), () =>
         {
             if (_menuTarget is not { } item) return;
             try
             {
                 Clipboard.SetText(item.Url);
-                SetStatus("Ссылка скопирована: " + item.Url);
+                SetStatus(Loc.F("Ссылка скопирована: {0}", item.Url));
             }
             catch (Exception ex)
             {
-                SetStatus("Не удалось скопировать: " + ex.Message);
+                SetStatus(Loc.F("Не удалось скопировать: {0}", ex.Message));
             }
         }));
         _itemMenu.Items.Add(new Separator());
-        _itemMenu.Items.Add(MenuItemFor("Изменить…", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Изменить…"), () =>
         {
             if (_menuTarget is { } item) EditItem(item);
         }));
-        _itemMenu.Items.Add(MenuItemFor("Удалить", () =>
+        _itemMenu.Items.Add(MenuItemFor(Loc.T("Удалить"), () =>
         {
             if (_menuTarget is { } item) DeleteItems(new[] { item });
         }));
@@ -974,7 +1026,7 @@ public partial class MainWindow : Window
         if (string.IsNullOrWhiteSpace(url)) return;
 
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
-        catch (Exception ex) { SetStatus("Не удалось открыть сайт: " + ex.Message); }
+        catch (Exception ex) { SetStatus(Loc.F("Не удалось открыть сайт: {0}", ex.Message)); }
     }
 
     // ---------- импорт / экспорт ----------
@@ -983,8 +1035,8 @@ public partial class MainWindow : Window
     {
         var dialog = new SaveFileDialog
         {
-            Title = "Экспорт каталога",
-            Filter = "Каталог SetupCrate (*.json)|*.json",
+            Title = Loc.T("Экспорт каталога"),
+            Filter = Loc.T("Каталог SetupCrate (*.json)|*.json"),
             FileName = $"setupcrate-catalog-{DateTime.Now:yyyyMMdd}.json"
         };
         if (dialog.ShowDialog() != true) return;
@@ -998,11 +1050,11 @@ public partial class MainWindow : Window
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
             File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(_catalog, options));
-            SetStatus($"Экспортировано записей: {_items.Count} → {dialog.FileName}");
+            SetStatus(Loc.F("Экспортировано записей: {0} → {1}", _items.Count, dialog.FileName));
         }
         catch (Exception ex)
         {
-            SetStatus("Не удалось экспортировать: " + ex.Message);
+            SetStatus(Loc.F("Не удалось экспортировать: {0}", ex.Message));
         }
     }
 
@@ -1010,8 +1062,8 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFileDialog
         {
-            Title = "Импорт каталога",
-            Filter = "Каталог SetupCrate (*.json)|*.json|Все файлы (*.*)|*.*"
+            Title = Loc.T(Loc.T("Импорт каталога")),
+            Filter = Loc.T("Каталог SetupCrate (*.json)|*.json|Все файлы (*.*)|*.*")
         };
         if (dialog.ShowDialog() != true) return;
 
@@ -1022,20 +1074,20 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Не удалось прочитать файл: " + ex.Message);
+            SetStatus(Loc.F("Не удалось прочитать файл: {0}", ex.Message));
             return;
         }
 
         if (imported?.Items == null || imported.Items.Count == 0)
         {
-            SetStatus("В выбранном файле нет записей.");
+            SetStatus(Loc.T("В выбранном файле нет записей."));
             return;
         }
 
         var answer = MessageBox.Show(
             $"В файле записей: {imported.Items.Count}.\n\n" +
             "«Да» — заменить текущий каталог.\n«Нет» — добавить к текущему (дубликаты пропущу).",
-            "Импорт каталога", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+            Loc.T(Loc.T("Импорт каталога")), MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
         if (answer == MessageBoxResult.Cancel) return;
 
         if (answer == MessageBoxResult.Yes)
@@ -1062,7 +1114,7 @@ public partial class MainWindow : Window
         Save();
         RebuildCategories();
         UpdateEmptyState();
-        SetStatus($"Импорт завершён. Записей сейчас: {_items.Count}.");
+        SetStatus(Loc.F("Импорт завершён. Записей сейчас: {0}.", _items.Count));
     }
 
     // ---------- загрузка файлов ----------
@@ -1088,7 +1140,7 @@ public partial class MainWindow : Window
         Progress.Minimum = 0;
         Progress.Maximum = list.Count;
         Progress.Value = 0;
-        Log($"Старт загрузки: {list.Count} шт. → {dir}");
+        Log(Loc.F("Старт загрузки: {0} шт. → {1}", list.Count, dir));
 
         var semaphore = new SemaphoreSlim(3);
         var done = 0;
@@ -1100,8 +1152,8 @@ public partial class MainWindow : Window
             await semaphore.WaitAsync(ct);
             try
             {
-                SetItem(item, "скачивание…");
-                var progress = new Progress<double>(p => SetItem(item, $"скачивание {p:P0}"));
+                SetItem(item, Loc.T("скачивание…"));
+                var progress = new Progress<double>(p => SetItem(item, Loc.F("скачивание {0}", p.ToString("P0"))));
                 var result = await _downloader.DownloadAsync(item, dir, progress, ct);
 
                 item.FileName = result.FileName;
@@ -1113,12 +1165,12 @@ public partial class MainWindow : Window
             }
             catch (OperationCanceledException)
             {
-                SetItem(item, "отменено");
+                SetItem(item, Loc.T("отменено"));
             }
             catch (Exception ex)
             {
                 SetItem(item, "✗ " + ex.Message);
-                Log($"{item.Name}: ошибка — {ex.Message}");
+                Log(Loc.F("{0}: ошибка — {1}", item.Name, ex.Message));
                 Interlocked.Increment(ref failedCount);
             }
             finally
@@ -1153,26 +1205,26 @@ public partial class MainWindow : Window
         string text;
         if (ext is ".zip" or ".7z")
         {
-            text = "✓ скачано";
+            text = Loc.T("✓ скачано");
         }
         else
         {
             var signature = SignatureChecker.Check(result.FilePath);
             text = signature.StartsWith("✓")
-                ? "✓ подпись ок"
+                ? Loc.T("✓ подпись ок")
                 : signature.Contains("нет встроенной подписи")
-                    ? "⚠ без подписи"
-                    : "⚠ подпись не ок";
+                    ? Loc.T("⚠ без подписи")
+                    : Loc.T("⚠ подпись не ок");
         }
 
         if (!string.IsNullOrWhiteSpace(item.Sha256))
         {
-            if (result.Sha256 == null) text += " · sha256 не проверен";
+            if (result.Sha256 == null) text += " " + Loc.T("· sha256 не проверен");
             else if (string.Equals(result.Sha256, item.Sha256.Trim(), StringComparison.OrdinalIgnoreCase)) text += " · sha256 ✓";
             else text += " · sha256 ✗";
         }
 
-        if (result.Resumed) text += " · докачано";
+        if (result.Resumed) text += " " + Loc.T("· докачано");
 
         return text;
     }
@@ -1201,14 +1253,14 @@ public partial class MainWindow : Window
             await semaphore.WaitAsync(ct);
             try
             {
-                SetItem(item, "проверка…");
+                SetItem(item, Loc.T("проверка…"));
                 var check = await LinkChecker.CheckAsync(item, ct);
                 SetItem(item, check.Message, check.Size);
                 if (!check.Ok) Interlocked.Increment(ref dead);
             }
             catch (OperationCanceledException)
             {
-                SetItem(item, "отменено");
+                SetItem(item, Loc.T("отменено"));
             }
             catch (Exception ex)
             {
@@ -1234,7 +1286,7 @@ public partial class MainWindow : Window
             _cts.Dispose();
             _cts = null;
             Progress.Value = 0;
-            SetStatus(dead == 0 ? "Все ссылки отвечают." : $"Проверено {list.Count}, проблемных: {dead}.");
+            SetStatus(dead == 0 ? Loc.T("Все ссылки отвечают.") : Loc.F("Проверено {0}, проблемных: {1}.", list.Count, dead));
         }
     }
 
@@ -1258,26 +1310,26 @@ public partial class MainWindow : Window
                 var path = ResolveLocalFile(item);
                 if (path == null)
                 {
-                    SetItem(item, "✗ файл не скачан — сначала «Скачать»");
+                    SetItem(item, Loc.T("✗ файл не скачан — сначала «Скачать»"));
                     continue;
                 }
 
-                SetItem(item, "запуск установщика…");
+                SetItem(item, Loc.T("запуск установщика…"));
                 try
                 {
                     var code = await ProcessRunner.RunAsync(path, item.SilentArgs, ct);
-                    SetItem(item, $"✓ установщик завершён (код {code})");
-                    Log($"{item.Name}: установщик завершён, код {code}");
+                    SetItem(item, Loc.F("✓ установщик завершён (код {0})", code));
+                    Log(Loc.F("{0}: установщик завершён, код {1}", item.Name, code));
                 }
                 catch (OperationCanceledException)
                 {
-                    SetItem(item, "отменено");
+                    SetItem(item, Loc.T("отменено"));
                     break;
                 }
                 catch (Exception ex)
                 {
                     SetItem(item, "✗ " + ex.Message);
-                    Log($"{item.Name}: ошибка запуска — {ex.Message}");
+                    Log(Loc.F("{0}: ошибка запуска — {1}", item.Name, ex.Message));
                 }
             }
         }
@@ -1287,7 +1339,7 @@ public partial class MainWindow : Window
             SetBusy(false);
             _cts.Dispose();
             _cts = null;
-            SetStatus("Установка завершена.");
+            SetStatus(Loc.T("Установка завершена."));
         }
     }
 

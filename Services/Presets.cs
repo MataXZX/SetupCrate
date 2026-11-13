@@ -2,7 +2,10 @@ namespace SetupCrate.Services;
 
 public sealed record PresetApp(string Name, string Url, string Site, string Notes = "");
 
-public sealed record Preset(string Name, IReadOnlyList<PresetApp> Apps);
+public sealed record Preset(string Name, IReadOnlyList<PresetApp> Apps)
+{
+    public string DisplayName => Loc.T(Name);
+}
 
 public static class Presets
 {

@@ -38,7 +38,7 @@ internal static class SelfTest
         if (File.Exists(self))
         {
             var unsigned = SignatureChecker.Check(self);
-            Check("Signature(unsigned)", unsigned.Contains("нет встроенной подписи"), unsigned);
+            Check("Signature(unsigned)", unsigned.Contains(Loc.T("нет встроенной подписи")), unsigned);
         }
 
         // 4. Сохранение и чтение каталога.

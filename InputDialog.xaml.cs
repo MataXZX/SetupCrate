@@ -1,5 +1,7 @@
 using System.Windows;
 
+using SetupCrate.Services;
+
 namespace SetupCrate;
 
 public partial class InputDialog : Window
@@ -22,7 +24,7 @@ public partial class InputDialog : Window
     {
         if (string.IsNullOrWhiteSpace(TxtValue.Text))
         {
-            MessageBox.Show("Название не может быть пустым.", "SetupCrate",
+            MessageBox.Show(Loc.T("Название не может быть пустым."), "SetupCrate",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

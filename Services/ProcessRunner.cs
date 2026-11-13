@@ -28,7 +28,7 @@ public static class ProcessRunner
             };
         }
 
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Не удалось запустить установщик.");
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException(Loc.T("Не удалось запустить установщик."));
         await process.WaitForExitAsync(ct).ConfigureAwait(false);
 
         try { return process.ExitCode; }

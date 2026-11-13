@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
+using SetupCrate.Services;
+
 namespace SetupCrate.Models;
 
 public sealed class CatalogItem : INotifyPropertyChanged
@@ -74,9 +76,11 @@ public sealed class CatalogItem : INotifyPropertyChanged
 
     [JsonIgnore] public string SizeText => _size is > 0 ? FormatBytes(_size.Value) : "";
 
+    public void NotifyMetaText() => OnPropertyChanged(nameof(MetaText));
+
     [JsonIgnore]
     public string MetaText => string.Join("  ·  ",
-        new[] { Category, SizeText }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        new[] { Loc.T(Category), SizeText }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
     [JsonIgnore]
     public string Letter => string.IsNullOrWhiteSpace(_name) ? "?" : _name.Trim()[..1].ToUpperInvariant();

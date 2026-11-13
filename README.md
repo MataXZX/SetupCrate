@@ -15,6 +15,7 @@ A small Windows app for keeping a personal catalog of installer links and downlo
 - Import / export the catalog.
 - Categories: create, rename, delete, drag-and-drop reorder.
 - Built-in preset packs (Basic / Games / Work) kept fully separate from your own catalog.
+- Russian and English interface, chosen automatically from the Windows display language (switchable with the small `RU`/`EN` button in the status bar).
 - Three themes: **Light**, **Dark**, **Glass** (DWM acrylic blur where supported, falls back to a translucent gradient everywhere).
 
 ## Screenshots

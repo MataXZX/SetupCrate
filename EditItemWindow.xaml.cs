@@ -51,14 +51,14 @@ public partial class EditItemWindow : Window
 
         if (name.Length == 0)
         {
-            MessageBox.Show("Укажи название программы.", "SetupCrate", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(Loc.T("Укажи название программы."), "SetupCrate", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
         {
-            MessageBox.Show("Нужна полная ссылка на файл, начиная с https:// (например, https://site.com/app-x64.exe).",
+            MessageBox.Show(Loc.T("Нужна полная ссылка на файл, начиная с https:// (например, https://site.com/app-x64.exe)."),
                 "SetupCrate", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -68,7 +68,7 @@ public partial class EditItemWindow : Window
             (!Uri.TryCreate(site, UriKind.Absolute, out var siteUri) ||
              (siteUri.Scheme != Uri.UriSchemeHttps && siteUri.Scheme != Uri.UriSchemeHttp)))
         {
-            MessageBox.Show("Сайт должен быть полной ссылкой, начиная с https://", "SetupCrate",
+            MessageBox.Show(Loc.T("Сайт должен быть полной ссылкой, начиная с https://"), "SetupCrate",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -114,7 +114,7 @@ public partial class EditItemWindow : Window
 
         if (!Uri.TryCreate(source, UriKind.Absolute, out var uri))
         {
-            MessageBox.Show("Сначала укажи сайт или ссылку, с которой искать файлы.", "SetupCrate",
+            MessageBox.Show(Loc.T("Сначала укажи сайт или ссылку, с которой искать файлы."), "SetupCrate",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -122,13 +122,13 @@ public partial class EditItemWindow : Window
         try
         {
             BtnFind.IsEnabled = false;
-            BtnFind.Content = "Ищу…";
+            BtnFind.Content = Loc.T("Ищу…");
             var html = await DownloadService.Http.GetStringAsync(uri);
             var links = LinkExtractor.Extract(html, uri);
 
             if (links.Count == 0)
             {
-                MessageBox.Show("На этой странице не нашлось ссылок .exe/.msi/.zip. Открой сайт вручную и скопируй прямую ссылку.",
+                MessageBox.Show(Loc.T("На этой странице не нашлось ссылок .exe/.msi/.zip. Открой сайт вручную и скопируй прямую ссылку."),
                     "SetupCrate", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
@@ -139,12 +139,12 @@ public partial class EditItemWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Не удалось загрузить страницу: " + ex.Message, "SetupCrate",
+            MessageBox.Show(Loc.F("Не удалось загрузить страницу: {0}", ex.Message), "SetupCrate",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {
-            BtnFind.Content = "Найти ссылки на странице…";
+            BtnFind.Content = Loc.T("Найти ссылки на странице…");
             BtnFind.IsEnabled = true;
         }
     }

@@ -18,6 +18,43 @@ public partial class App : Application
 
         var settings = SettingsStore.Load(AppContext.BaseDirectory);
         ThemeManager.Apply(ThemeManager.Parse(settings.Theme));
+        Loc.Apply(settings.Language switch
+        {
+            "ru" => AppLang.Ru,
+            "en" => AppLang.En,
+            _ => Loc.Detect()
+        });
+
+        if (e.Args.Contains("--dump-loc", StringComparer.OrdinalIgnoreCase))
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            var probe = new MainWindow();
+            probe.Show();
+            probe.UpdateLayout();
+
+            var names = new[] { "BtnDownload", "BtnInstall", "BtnCheck", "BtnLogToggle", "BtnLang", "BtnToggleAll", "BtnTheme" };
+            var dump = new List<string>();
+
+            foreach (var lang in new[] { AppLang.Ru, AppLang.En })
+            {
+                Loc.Apply(lang);
+                probe.UpdateLayout();
+                probe.Dispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+
+                foreach (var name in names)
+                {
+                    if (probe.FindName(name) is System.Windows.Controls.Button button)
+                        dump.Add($"{name}[{lang}]={(button.Content as string ?? "(null)")}");
+                }
+            }
+
+            File.WriteAllLines(Path.Combine(AppContext.BaseDirectory, "loc-dump.txt"), dump);
+
+            probe.Close();
+            Shutdown(0);
+            return;
+        }
 
         if (e.Args.Contains("--selftest", StringComparer.OrdinalIgnoreCase))
         {

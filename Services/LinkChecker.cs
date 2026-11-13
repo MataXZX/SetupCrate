@@ -17,7 +17,7 @@ public static class LinkChecker
             await Task.Delay(400, ct).ConfigureAwait(false);
         }
 
-        return new LinkCheck(false, null, "✗ ссылка не открылась");
+        return new LinkCheck(false, null, Loc.T("✗ ссылка не открылась"));
     }
 
     private static async Task<LinkCheck> TryCheckAsync(CatalogItem item, CancellationToken ct)
@@ -32,20 +32,20 @@ public static class LinkChecker
                 return await ProbeWithGetAsync(item, ct).ConfigureAwait(false);
 
             if (!resp.IsSuccessStatusCode)
-                return new LinkCheck(false, null, $"✗ ссылка не отвечает ({(int)resp.StatusCode})");
+                return new LinkCheck(false, null, Loc.F("✗ ссылка не отвечает ({0})", (int)resp.StatusCode));
 
             var size = resp.Content.Headers.ContentLength;
             if (IsWebPage(resp.Content.Headers.ContentType))
-                return new LinkCheck(false, size, "⚠ ведёт на страницу сайта, а не на файл");
+                return new LinkCheck(false, size, Loc.T("⚠ ведёт на страницу сайта, а не на файл"));
 
             if (size is null or <= 0)
             {
                 // Некоторые серверы не отдают размер на HEAD — уточняем Range-запросом.
                 var probe = await ProbeWithGetAsync(item, ct).ConfigureAwait(false);
-                return probe with { Message = "✓ ссылка работает" };
+                return probe with { Message = Loc.T("✓ ссылка работает") };
             }
 
-            return new LinkCheck(true, size, "✓ ссылка работает");
+            return new LinkCheck(true, size, Loc.T("✓ ссылка работает"));
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -63,7 +63,7 @@ public static class LinkChecker
             }
             catch
             {
-                return new LinkCheck(false, null, "✗ ссылка не открылась");
+                return new LinkCheck(false, null, Loc.T("✗ ссылка не открылась"));
             }
         }
     }
@@ -76,13 +76,13 @@ public static class LinkChecker
             .ConfigureAwait(false);
 
         if (!resp.IsSuccessStatusCode)
-            return new LinkCheck(false, null, $"✗ ссылка не отвечает ({(int)resp.StatusCode})");
+            return new LinkCheck(false, null, Loc.F("✗ ссылка не отвечает ({0})", (int)resp.StatusCode));
 
         var size = resp.Content.Headers.ContentRange?.Length ?? resp.Content.Headers.ContentLength;
         if (IsWebPage(resp.Content.Headers.ContentType))
-            return new LinkCheck(false, size, "⚠ ведёт на страницу сайта, а не на файл");
+            return new LinkCheck(false, size, Loc.T("⚠ ведёт на страницу сайта, а не на файл"));
 
-        return new LinkCheck(true, size, "✓ ссылка работает");
+        return new LinkCheck(true, size, Loc.T("✓ ссылка работает"));
     }
 
     private static bool IsWebPage(System.Net.Http.Headers.MediaTypeHeaderValue? contentType)
