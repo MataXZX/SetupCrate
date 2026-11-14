@@ -7,6 +7,10 @@ public sealed class AppSettings
 {
     public string Theme { get; set; } = "Light";
     public string Language { get; set; } = "auto";
+    public bool CommunityWarningSeen { get; set; }
+    public bool CommunityInstallAccepted { get; set; }
+    public bool PublishConsentAccepted { get; set; }
+    public List<string> HiddenPackIds { get; set; } = new();
 }
 
 public static class SettingsStore

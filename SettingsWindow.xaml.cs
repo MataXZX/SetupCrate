@@ -26,6 +26,7 @@ public partial class SettingsWindow : Window
         _languageChanged = languageChanged;
 
         TxtVersion.Text = Loc.F("Текущая версия: {0}", CurrentVersion());
+
         UpdateLanguageButtons();
     }
 
@@ -43,6 +44,7 @@ public partial class SettingsWindow : Window
     }
 
     private static string CurrentVersionText() => CurrentVersion().ToString(3);
+
 
     private void UpdateLanguageButtons()
     {
@@ -64,6 +66,7 @@ public partial class SettingsWindow : Window
             _ => Loc.Detect()
         });
         SettingsStore.Save(_baseDir, _settings);
+
 
         UpdateLanguageButtons();
         TxtVersion.Text = Loc.F("Текущая версия: {0}", CurrentVersion());

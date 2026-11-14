@@ -6,8 +6,10 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Animation;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using SetupCrate.Models;
 using SetupCrate.Services;
 using Microsoft.Win32;
@@ -39,6 +41,13 @@ public partial class MainWindow : Window
     private bool _isMaximized;
 
     private Preset? _activePreset;
+    private CommunityCatalog? _activeCommunity;
+    private ICollectionView? _communityView;
+    private readonly ObservableCollection<CommunityCatalog> _community = new();
+    private readonly Dictionary<string, List<CatalogItem>> _communityCache = new();
+    private IReadOnlyList<MarketEntry> _market = Array.Empty<MarketEntry>();
+    private MarketEntry? _selectedEntry;
+    private CommunityCatalog? _storePack;
     private ICollectionView? _packView;
 
     private static string AppVersion =>
@@ -74,6 +83,12 @@ public partial class MainWindow : Window
         PacksChevron.Text = "▾";
 
         BuildItemMenu();
+
+        BtnCommunityToggle.IsChecked = false;
+        CommunityPanel.Visibility = Visibility.Collapsed;
+        CommunityList.ItemsSource = _community;
+        ReloadCommunity();
+        UpdateCommunityEmpty();
         ItemsList.ContextMenu = _itemMenu;
 
         RebuildCategories();
@@ -230,10 +245,12 @@ public partial class MainWindow : Window
 
     private void ExitPack()
     {
-        if (_activePreset == null) return;
+        if (_activePreset == null && _activeCommunity == null) return;
 
         _activePreset = null;
+        _activeCommunity = null;
         _packView = null;
+        _communityView = null;
         ItemsList.ItemsSource = CollectionViewSource.GetDefaultView(_items);
 
         SetBusy(_busy);
@@ -244,7 +261,8 @@ public partial class MainWindow : Window
 
     private void Categories_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_activePreset != null) ExitPack();
+        LeaveStore();
+        if (_activePreset != null || _activeCommunity != null) ExitPack();
         RefreshView();
     }
 
@@ -552,7 +570,7 @@ public partial class MainWindow : Window
     private void UpdateThemeButton()
     {
         if (BtnTheme != null)
-            BtnTheme.Content = Loc.F("Тема: {0}", ThemeManager.DisplayName(ThemeManager.Current));
+            BtnTheme.ToolTip = Loc.F("Тема: {0}", ThemeManager.DisplayName(ThemeManager.Current));
     }
 
     private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -622,6 +640,11 @@ public partial class MainWindow : Window
 
     private void BtnAdd_Click(object sender, RoutedEventArgs e)
     {
+        if (_activeCommunity != null)
+        {
+            SetStatus(Loc.T("В каталоге сообщества нельзя добавлять записи."));
+            return;
+        }
         if (_activePreset != null)
         {
             SetStatus(Loc.T("Сейчас открыт пакет. Вернись в каталог, чтобы добавить программу."));
@@ -704,6 +727,11 @@ public partial class MainWindow : Window
 
     private void BtnDeleteSelected_Click(object sender, RoutedEventArgs e)
     {
+        if (_activeCommunity != null)
+        {
+            SetStatus(Loc.T("В каталоге сообщества нельзя удалять записи."));
+            return;
+        }
         if (_activePreset != null)
         {
             SetStatus(Loc.T("Это витрина пакета, а не каталог — удалять нечего. Вернись в каталог."));
@@ -720,8 +748,18 @@ public partial class MainWindow : Window
         DeleteItems(selected);
     }
 
+    private List<CatalogItem> CurrentList()
+    {
+        if (_activeCommunity != null) return GetCommunityItems(_activeCommunity);
+        if (_activePreset != null) return GetPackItems(_activePreset);
+        return _items.ToList();
+    }
+
     private List<CatalogItem> CurrentSelection()
     {
+        if (_activeCommunity != null)
+            return GetCommunityItems(_activeCommunity).Where(i => i.IsSelected).ToList();
+
         if (_activePreset != null)
             return GetPackItems(_activePreset).Where(i => i.IsSelected).ToList();
 
@@ -742,7 +780,7 @@ public partial class MainWindow : Window
 
     private void BtnDownloadAll_Click(object sender, RoutedEventArgs e)
     {
-        var list = _activePreset != null ? GetPackItems(_activePreset) : _items.ToList();
+        var list = CurrentList();
 
         if (list.Count == 0)
         {
@@ -767,7 +805,7 @@ public partial class MainWindow : Window
 
     private void BtnCheck_Click(object sender, RoutedEventArgs e)
     {
-        var list = _activePreset != null ? GetPackItems(_activePreset) : _items.ToList();
+        var list = CurrentList();
 
         if (list.Count == 0)
         {
@@ -877,6 +915,7 @@ public partial class MainWindow : Window
 
     private void Preset_Click(object sender, RoutedEventArgs e)
     {
+        LeaveStore();
         if (sender is FrameworkElement { DataContext: Preset preset }) ShowPack(preset);
     }
 
@@ -896,6 +935,38 @@ public partial class MainWindow : Window
 
         var show = string.IsNullOrEmpty(TxtSearch.Text) && !TxtSearch.IsKeyboardFocused;
         TxtPlaceholder.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private bool _searchOpen;
+
+    private void BtnSearch_Click(object sender, RoutedEventArgs e)
+    {
+        _searchOpen = !_searchOpen;
+
+        var animation = new DoubleAnimation(
+            _searchOpen ? 210 : 0,
+            TimeSpan.FromMilliseconds(180))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        SearchHost.BeginAnimation(FrameworkElement.WidthProperty, animation);
+
+        if (_searchOpen) TxtSearch.Focus();
+        else
+        {
+            TxtSearch.Text = string.Empty;
+            BtnSearch.Focus();
+        }
+    }
+
+    private void TxtSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Escape && _searchOpen)
+        {
+            BtnSearch_Click(BtnSearch, new RoutedEventArgs());
+            e.Handled = true;
+        }
     }
 
     private void BtnSettings_Click(object sender, RoutedEventArgs e)
@@ -928,12 +999,608 @@ public partial class MainWindow : Window
 
         _itemMenu.Items.Clear();
         BuildItemMenu();
+
+        BtnCommunityToggle.IsChecked = false;
+        CommunityPanel.Visibility = Visibility.Collapsed;
+        CommunityList.ItemsSource = _community;
+        ReloadCommunity();
+        UpdateCommunityEmpty();
         UpdateEmptyState();
 
         SetStatus(_items.Count == 0
             ? Loc.T("Каталог пуст. Нажми «Добавить»: название + прямая ссылка на установщик.")
             : Loc.F("Записей: {0}. Папка загрузок: {1}", _items.Count, DownloadDir));
     }
+
+    private void BtnCommunity_Click(object sender, RoutedEventArgs e) => OpenStore();
+
+    private void BtnThanks_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://boosty.to/mataxzx/donate") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            SetStatus(Loc.F("Не удалось открыть ссылку: {0}", ex.Message));
+        }
+    }
+
+    private void LeaveStore()
+    {
+        if (StoreLayer.Visibility == Visibility.Visible) CloseStore();
+    }
+
+    private bool AskCommunityWarning()
+    {
+        var body = string.Join("\n\n",
+            Loc.T("Эти каталоги создают другие пользователи и публикуют бесплатно. SetupCrate их не проверяет и не одобряет."),
+            Loc.T("Мы не отвечаем за состав сборок, ссылки, установщики, безопасность, работоспособность и любой ущерб от установки или использования программ из таких каталогов."),
+            Loc.T("Скачивание и установка — на ваш страх и риск. Перед установкой проверяйте, что это за программы и откуда они загружаются."));
+
+        var window = new ConsentWindow(
+            Loc.T("Каталоги сообщества"),
+            body,
+            Loc.T("Я понимаю, что SetupCrate не несёт ответственности за каталоги сообщества, и хочу продолжить."),
+            Loc.T("Продолжить"),
+            Loc.T("Запомнить мой выбор"))
+        {
+            Owner = this
+        };
+
+        if (window.ShowDialog() != true) return false;
+
+        if (window.Remember)
+        {
+            _settings.CommunityWarningSeen = true;
+            SettingsStore.Save(_baseDir, _settings);
+        }
+
+        return true;
+    }
+
+    private bool AskCommunityInstall(CommunityCatalog catalog)
+    {
+        var body = string.Join("\n\n",
+            Loc.F("Этот каталог создал пользователь @{0}. SetupCrate не проверял приложения, ссылки и установщики в этой сборке и не несёт ответственности за их содержимое, безопасность, работоспособность и возможный вред.", catalog.Author),
+            Loc.T("Установка выполняется на ваш страх и риск."));
+
+        var window = new ConsentWindow(
+            Loc.F("Установить каталог «{0}»?", catalog.Name),
+            body,
+            Loc.T("Я понимаю риски и всё равно хочу установить этот каталог."),
+            Loc.T("Установить"),
+            Loc.T("Запомнить мой выбор"))
+        {
+            Owner = this
+        };
+
+        if (window.ShowDialog() != true) return false;
+
+        if (window.Remember)
+        {
+            _settings.CommunityInstallAccepted = true;
+            SettingsStore.Save(_baseDir, _settings);
+        }
+
+        return true;
+    }
+
+    private void OpenStore()
+    {
+        if (!_settings.CommunityWarningSeen && !AskCommunityWarning()) return;
+
+        InitStoreSort();
+
+        StoreLayer.Visibility = Visibility.Visible;
+        SetStoreView(StoreListPanel);
+        _ = RefreshStoreAsync();
+    }
+
+    private void CloseStore() => StoreLayer.Visibility = Visibility.Collapsed;
+
+    private void SetStoreView(UIElement panel)
+    {
+        StoreListPanel.Visibility = Visibility.Collapsed;
+        StorePackPanel.Visibility = Visibility.Collapsed;
+        StorePublishPanel.Visibility = Visibility.Collapsed;
+        panel.Visibility = Visibility.Visible;
+    }
+
+    private async Task RefreshStoreAsync()
+    {
+        _market = await CommunityMarket.LoadAsync(_baseDir);
+        ApplyStoreFilter();
+    }
+
+    private void ApplyStoreFilter()
+    {
+        var tokens = TxtStoreSearch.Text
+            .Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(token => token.TrimStart('#').Trim())
+            .Where(token => token.Length > 0)
+            .Select(token => token.ToLowerInvariant())
+            .ToList();
+
+        var filtered = _market
+            .Where(entry => !_settings.HiddenPackIds.Contains(entry.Id))
+            .Where(entry =>
+            {
+                if (tokens.Count == 0) return true;
+
+                var haystack = (entry.Name + " " + entry.Id + " " + entry.Author + " " +
+                                entry.Description + " " + string.Join(" ", entry.Tags)).ToLowerInvariant();
+
+                return tokens.All(token => haystack.Contains(token));
+            });
+
+        var sorted = (CmbStoreSort?.SelectedIndex ?? 0) switch
+        {
+            1 => filtered.OrderByDescending(entry => entry.Downloads),
+            2 => filtered.OrderByDescending(entry => entry.Likes),
+            3 => filtered.OrderByDescending(entry => entry.Dislikes),
+            4 => filtered.OrderByDescending(entry => entry.Verified).ThenByDescending(entry => entry.Likes),
+            5 => filtered.OrderByDescending(entry => entry.HasChannel).ThenByDescending(entry => entry.Likes),
+            _ => filtered
+        };
+
+        var result = sorted.ToList();
+        StoreList.ItemsSource = result;
+        TxtStoreEmpty.Visibility = result.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void InitStoreSort()
+    {
+        if (CmbStoreSort.ItemsSource != null) return;
+
+        CmbStoreSort.ItemsSource = new[]
+        {
+            Loc.T("По умолчанию"),
+            Loc.T("По скачиваниям"),
+            Loc.T("По лайкам"),
+            Loc.T("По дизлайкам"),
+            Loc.T("Сначала проверенные"),
+            Loc.T("Сначала от ютуберов")
+        };
+        CmbStoreSort.SelectedIndex = 0;
+    }
+
+    private void CmbStoreSort_SelectionChanged(object sender, SelectionChangedEventArgs e) => ApplyStoreFilter();
+
+    private void Tag_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not FrameworkElement { Tag: string tag } || string.IsNullOrWhiteSpace(tag)) return;
+
+        TxtStoreSearch.Text = "#" + tag;
+        TxtStoreSearch.Focus();
+        ApplyStoreFilter();
+    }
+
+    private void Channel_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not FrameworkElement { Tag: string url } || string.IsNullOrWhiteSpace(url)) return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            SetStatus(Loc.F("Не удалось открыть ссылку: {0}", ex.Message));
+        }
+    }
+
+    private void TxtStoreSearch_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        ApplyStoreFilter();
+        UpdateStorePlaceholder();
+    }
+
+    private void TxtStoreSearch_GotFocus(object sender, KeyboardFocusChangedEventArgs e) => UpdateStorePlaceholder();
+
+    private void TxtStoreSearch_LostFocus(object sender, KeyboardFocusChangedEventArgs e) => UpdateStorePlaceholder();
+
+    private void UpdateStorePlaceholder()
+    {
+        if (TxtStorePlaceholder == null) return;
+
+        var show = string.IsNullOrEmpty(TxtStoreSearch.Text) && !TxtStoreSearch.IsKeyboardFocused;
+        TxtStorePlaceholder.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BtnStoreBack_Click(object sender, RoutedEventArgs e)
+    {
+        if (StorePackPanel.Visibility == Visibility.Visible || StorePublishPanel.Visibility == Visibility.Visible)
+            SetStoreView(StoreListPanel);
+        else
+            CloseStore();
+    }
+
+    private void BtnStoreBackToList_Click(object sender, RoutedEventArgs e) => SetStoreView(StoreListPanel);
+
+    private async void StoreCard_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: MarketEntry entry }) return;
+
+        _selectedEntry = entry;
+        _storePack = null;
+
+        TxtPackName.Text = entry.Name;
+        TxtPackAuthor.Text = entry.Author;
+        TxtPackAuthorNote.Text = Loc.F("Сборка пользователя @{0}. Не проверена SetupCrate. Мы не несём ответственности за её содержимое и безопасность.", entry.Author);
+        PackVerifiedBadge.Visibility = entry.Verified ? Visibility.Visible : Visibility.Collapsed;
+        BtnPackChannel.Tag = entry.ChannelUrl;
+        BtnPackChannel.Visibility = entry.HasChannel ? Visibility.Visible : Visibility.Collapsed;
+
+
+        TxtPackStats.Text = entry.RatingText + "    " + entry.DownloadsText;
+        TxtPackTags.Text = entry.TagsText;
+        TxtPackDescription.Text = entry.Description;
+        BtnPackId.Content = "ID: " + entry.Id;
+        PackAppsList.ItemsSource = null;
+        TxtPackStatus.Text = "";
+
+        SetStoreView(StorePackPanel);
+
+        var local = CommunityStore.LoadAll(_baseDir)
+            .FirstOrDefault(c => c.Id == entry.Id || c.Name == entry.Name);
+
+        if (local != null)
+        {
+            _storePack = local;
+        }
+        else if (!string.IsNullOrWhiteSpace(entry.DownloadUrl))
+        {
+            var json = await CommunityMarket.DownloadAsync(entry.DownloadUrl);
+            if (json != null) _storePack = CommunityStore.Parse(json);
+        }
+
+        if (_storePack != null)
+        {
+            PackAppsList.ItemsSource = _storePack.Apps;
+            TxtPackStatus.Text = Loc.F("Программ: {0}", _storePack.Apps.Count);
+        }
+        else
+        {
+            TxtPackStatus.Text = Loc.T("Пак недоступен: нет соединения с магазином.");
+        }
+    }
+
+    private void BtnPackDownload_Click(object sender, RoutedEventArgs e)
+    {
+        if (_storePack is null) return;
+        if (!_settings.CommunityInstallAccepted && !AskCommunityInstall(_storePack)) return;
+
+        try
+        {
+            CommunityStore.Save(_baseDir, _storePack);
+            ReloadCommunity();
+            _ = CommunityMarket.TrackDownloadAsync(_storePack.Id);
+            TxtPackStatus.Text = Loc.F("Пак добавлен: {0}", _storePack.Name);
+        }
+        catch (Exception ex)
+        {
+            TxtPackStatus.Text = Loc.F("Не удалось добавить пак: {0}", ex.Message);
+        }
+    }
+
+    private static string DescribePublishError(string raw)
+    {
+        var text = (raw ?? "").Trim();
+
+        try
+        {
+            using var document = JsonDocument.Parse(text);
+            if (document.RootElement.TryGetProperty("error", out var error))
+                text = error.GetString() ?? text;
+        }
+        catch
+        {
+        }
+
+        if (text.Contains("daily limit", StringComparison.OrdinalIgnoreCase))
+            return Loc.T("Лимит публикаций на сегодня исчерпан. Попробуй позже.");
+
+        if (text.Contains("too many attempts", StringComparison.OrdinalIgnoreCase))
+            return Loc.T("Слишком много попыток. Подожди немного.");
+
+        return text;
+    }
+
+    private void BtnPackId_Click(object sender, RoutedEventArgs e)
+    {
+        var id = _storePack?.Id ?? _selectedEntry?.Id;
+        if (string.IsNullOrWhiteSpace(id)) return;
+
+        try
+        {
+            Clipboard.SetText(id);
+            TxtPackStatus.Text = Loc.F("ID скопирован: {0}", id);
+        }
+        catch (Exception ex)
+        {
+            TxtPackStatus.Text = Loc.F("Не удалось скопировать: {0}", ex.Message);
+        }
+    }
+
+    private void BtnCommunityDelete_Click(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not FrameworkElement { DataContext: CommunityCatalog catalog }) return;
+
+        var answer = MessageBox.Show(this,
+            Loc.F("Удалить пак «{0}»?", catalog.Name),
+            Loc.T("Удаление пака"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (answer != MessageBoxResult.Yes) return;
+
+        try
+        {
+            CommunityStore.Delete(_baseDir, catalog);
+            if (_activeCommunity?.Id == catalog.Id) ExitPack();
+            ReloadCommunity();
+            SetStatus(Loc.F("Пак удалён: {0}", catalog.Name));
+        }
+        catch (Exception ex)
+        {
+            SetStatus(Loc.F("Не удалось удалить пак: {0}", ex.Message));
+        }
+    }
+
+
+    private DispatcherTimer? _toastTimer;
+
+    private void ShowToast(string text)
+    {
+        if (StoreToast == null || TxtStoreToast == null) return;
+
+        TxtStoreToast.Text = text;
+        StoreToast.Visibility = Visibility.Visible;
+
+        _toastTimer?.Stop();
+        _toastTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+        _toastTimer.Tick += (_, _) =>
+        {
+            _toastTimer?.Stop();
+            StoreToast.Visibility = Visibility.Collapsed;
+        };
+        _toastTimer.Start();
+    }
+
+    private async void BtnPackReport_Click(object sender, RoutedEventArgs e)
+    {
+        var id = _storePack?.Id ?? _selectedEntry?.Id;
+        if (string.IsNullOrWhiteSpace(id)) return;
+
+        var name = _storePack?.Name ?? _selectedEntry?.Name ?? "";
+        var author = _storePack?.Author ?? _selectedEntry?.Author ?? "";
+
+        var window = new ReportWindow(name, author, id) { Owner = this };
+        if (window.ShowDialog() != true) return;
+
+        var ok = await CommunityMarket.ReportAsync(id, window.ReasonTitle, window.Comment);
+
+        if (window.HidePack && !_settings.HiddenPackIds.Contains(id))
+        {
+            _settings.HiddenPackIds.Add(id);
+            SettingsStore.Save(_baseDir, _settings);
+            ReloadCommunity();
+        }
+
+        SetStoreView(StoreListPanel);
+        _ = RefreshStoreAsync();
+
+        ShowToast(ok
+            ? Loc.T("Спасибо за сигнал! До окончания проверки не рекомендуем устанавливать эту сборку.")
+            : Loc.T("Не удалось отправить жалобу. Проверь соединение и попробуй ещё раз."));
+    }
+
+    private void BtnStorePublish_Click(object sender, RoutedEventArgs e)
+    {
+        TxtPublishName.Text = "";
+        TxtPublishAuthor.Text = Environment.UserName;
+        TxtPublishDescription.Text = "";
+        TxtPublishTags.Text = "";
+        TxtPublishStatus.Text = "";
+
+        CmbPublishCategory.ItemsSource = _categories
+            .Select(c => c.Name)
+            .Where(name => IsRealCategory(name) &&
+                           _items.Any(i => string.Equals(CatOf(i), name, StringComparison.CurrentCultureIgnoreCase)))
+            .ToList();
+        CmbPublishCategory.SelectedIndex = -1;
+
+        UpdatePublishState();
+        SetStoreView(StorePublishPanel);
+    }
+
+    private void CmbPublishCategory_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdatePublishState();
+
+    private void TxtPublishName_TextChanged(object sender, TextChangedEventArgs e) => UpdatePublishState();
+
+    private List<CatalogItem> PublishItems()
+    {
+        if (CmbPublishCategory.SelectedItem is not string category) return new List<CatalogItem>();
+
+        return _items
+            .Where(i => string.Equals(CatOf(i), category, StringComparison.CurrentCultureIgnoreCase))
+            .ToList();
+    }
+
+    private void UpdatePublishState()
+    {
+        if (TxtPublishApps == null || BtnPublishSend == null) return;
+
+        var items = PublishItems();
+
+        TxtPublishApps.Text = CmbPublishCategory.SelectedItem is string category
+            ? Loc.F("Программ в паке: {0}", items.Count)
+            : Loc.T("Выбери категорию, которой хочешь поделиться.");
+
+        BtnPublishSend.IsEnabled = items.Count > 0 && !string.IsNullOrWhiteSpace(TxtPublishName.Text);
+    }
+
+    private bool AskPublishConsent()
+    {
+        var bullets = string.Join("\n",
+            "• " + Loc.T("самостоятельно подготовили её содержимое;"),
+            "• " + Loc.T("указали действительные ссылки на официальные источники приложений;"),
+            "• " + Loc.T("не публикуете пиратское, вредоносное или иное незаконное содержимое;"),
+            "• " + Loc.T("ознакомлены с тем, что SetupCrate не проверяет пользовательские сборки и не несёт ответственности за их содержимое и последствия использования."));
+
+        var body = string.Join("\n\n",
+            Loc.T("Публикуя сборку, вы подтверждаете, что:"),
+            bullets,
+            Loc.T("Вы несёте ответственность за свою публикацию. SetupCrate вправе скрыть или удалить сборку, а также заблокировать доступ пользователя к публикации."));
+
+        var window = new ConsentWindow(
+            Loc.T("Ответственность за публикацию"),
+            body,
+            Loc.T("Я принимаю ответственность за публикацию."),
+            Loc.T("Опубликовать"),
+            null)
+        {
+            Owner = this
+        };
+
+        return window.ShowDialog() == true;
+    }
+
+    private async void BtnPublishSend_Click(object sender, RoutedEventArgs e)
+    {
+        if (CmbPublishCategory.SelectedItem is not string)
+        {
+            TxtPublishStatus.Text = Loc.T("Выбери категорию для публикации.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(TxtPublishName.Text))
+        {
+            TxtPublishStatus.Text = Loc.T("Укажи название пака.");
+            return;
+        }
+
+        var items = PublishItems();
+        if (items.Count == 0)
+        {
+            TxtPublishStatus.Text = Loc.T("В этой категории нет программ.");
+            return;
+        }
+
+        if (!_settings.PublishConsentAccepted && !AskPublishConsent()) return;
+
+        var catalog = CommunityStore.FromCatalog(TxtPublishName.Text, TxtPublishAuthor.Text, items);
+        catalog.Id = string.Empty;
+        catalog.Description = TxtPublishDescription.Text.Trim();
+        catalog.Tags = TxtPublishTags.Text
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+        TxtPublishStatus.Text = Loc.T("Отправляю…");
+
+        var (ok, message) = await CommunityMarket.PublishAsync(CommunityStore.ToJson(catalog));
+
+        TxtPublishStatus.Text = ok
+            ? Loc.F("Пак отправлен в магазин: {0}", TxtPublishName.Text)
+            : Loc.F("Не удалось отправить: {0}", DescribePublishError(message));
+
+        if (ok)
+        {
+            _settings.PublishConsentAccepted = true;
+            SettingsStore.Save(_baseDir, _settings);
+            await RefreshStoreAsync();
+        }
+    }
+
+    private async void BtnVoteUp_Click(object sender, RoutedEventArgs e) => await VoteAsync(1);
+
+    private async void BtnVoteDown_Click(object sender, RoutedEventArgs e) => await VoteAsync(-1);
+
+    private async Task VoteAsync(int value)
+    {
+        if (_selectedEntry is null) return;
+
+        var result = await CommunityMarket.VoteAsync(_selectedEntry.Id, value);
+        if (result is { } counts)
+        {
+            _selectedEntry.Likes = counts.Likes;
+            _selectedEntry.Dislikes = counts.Dislikes;
+            TxtPackStats.Text = $"👍 {counts.Likes}    👎 {counts.Dislikes}    ↓ {_selectedEntry.Downloads}";
+        }
+    }
+
+
+    private void BtnCommunityToggle_Click(object sender, RoutedEventArgs e)
+    {
+        var open = BtnCommunityToggle.IsChecked == true;
+        CommunityPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        CommunityChevron.Text = open ? "▾" : "▸";
+    }
+
+    private void CommunityItem_Click(object sender, RoutedEventArgs e)
+    {
+        LeaveStore();
+        if (sender is System.Windows.FrameworkElement { DataContext: CommunityCatalog catalog })
+            ShowCommunity(catalog);
+    }
+
+    private void ReloadCommunity()
+    {
+        _community.Clear();
+        foreach (var catalog in CommunityStore.LoadAll(_baseDir))
+        {
+            if (_settings.HiddenPackIds.Contains(catalog.Id)) continue;
+            _community.Add(catalog);
+        }
+        UpdateCommunityEmpty();
+    }
+
+    private List<CatalogItem> GetCommunityItems(CommunityCatalog catalog)
+    {
+        if (_communityCache.TryGetValue(catalog.Id, out var cached)) return cached;
+
+        var items = catalog.Apps.Select(app => new CatalogItem
+        {
+            Name = app.Name,
+            Url = app.Url,
+            Site = app.Site,
+            Notes = app.Notes,
+            Category = Loc.T("Сообщество")
+        }).ToList();
+
+        foreach (var item in items) item.PropertyChanged += Item_PropertyChanged;
+        _communityCache[catalog.Id] = items;
+        return items;
+    }
+
+    private void ShowCommunity(CommunityCatalog catalog)
+    {
+        _activePreset = null;
+        _activeCommunity = catalog;
+
+        var items = GetCommunityItems(catalog);
+        _communityView = new CollectionViewSource { Source = items }.View;
+        _communityView.Filter = PackFilter;
+        ItemsList.ItemsSource = _communityView;
+
+        UpdateEmptyState();
+        SetStatus(Loc.F("Открыт каталог сообщества «{0}» (ID: {1}).", catalog.Name, catalog.Id));
+        _ = RefreshInstalledAsync();
+    }
+    private static string SafeCommunityFileName(string name)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string(name.Where(c => !invalid.Contains(c)).ToArray()).Trim();
+        if (string.IsNullOrWhiteSpace(clean)) clean = "catalog";
+        return clean + ".json";
+    }
+
+    private void UpdateCommunityEmpty() =>
+        CommunityEmpty.Visibility = CommunityList.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
     private void BtnLogToggle_Click(object sender, RoutedEventArgs e)
     {

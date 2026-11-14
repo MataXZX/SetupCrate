@@ -12,6 +12,7 @@
         <GradientStop Color="#7C9CFF" Offset="1"/>
     </LinearGradientBrush>
 
+    <SolidColorBrush x:Key="OverlayBg" Color="#FF141E2B"/>
     <SolidColorBrush x:Key="BgSurface" Color="#8C121C2E"/>
     <SolidColorBrush x:Key="BgCard" Color="#99131E31"/>
     <SolidColorBrush x:Key="CardBg" Color="#99131E31"/>
@@ -20,7 +21,7 @@
     <SolidColorBrush x:Key="Border" Color="#3DFFFFFF"/>
     <SolidColorBrush x:Key="BorderStrong" Color="#66FFFFFF"/>
     <SolidColorBrush x:Key="Fg" Color="#F2F7FF"/>
-    <SolidColorBrush x:Key="FgMuted" Color="#A9BCD6"/>
+    <SolidColorBrush x:Key="FgMuted" Color="#C9D8EA"/>
     <SolidColorBrush x:Key="Accent" Color="#8FD0FF"/>
     <SolidColorBrush x:Key="AccentHover" Color="#B5E0FF"/>
     <SolidColorBrush x:Key="AccentPressed" Color="#6FAFE0"/>

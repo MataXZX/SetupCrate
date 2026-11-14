@@ -28,29 +28,43 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="SetupCrate" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button x:Name="BtnCommunity" Content="{loc:Tr Text='Каталоги сообщества'}"
+                                Style="{StaticResource CommunityBtn}" Margin="14,0,0,0" Click="BtnCommunity_Click"/>
+                        <Button x:Name="BtnThanks" Content="{loc:Tr Text='Поблагодарить'}"
+                                Style="{StaticResource CommunityBtn}" Margin="8,0,0,0" Click="BtnThanks_Click"/>
                     </StackPanel>
 
-                    <Grid Grid.Column="2" Width="200" Height="34" Margin="0,0,10,0">
+                    <Button x:Name="BtnSearch" Grid.Column="2" Content="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                            FontSize="14" Style="{StaticResource WinButton}" Margin="4,0,0,0"
+                            ToolTip="{loc:Tr Text='Поиск'}" Click="BtnSearch_Click"/>
+
+                    <Grid x:Name="SearchHost" Grid.Column="3" Width="0" Height="34" Margin="6,0,4,0"
+                          ClipToBounds="True" HorizontalAlignment="Left">
                         <TextBox x:Name="TxtSearch" Style="{StaticResource InputBox}" Padding="12,0"
                                  TextChanged="TxtSearch_TextChanged"
                                  GotKeyboardFocus="TxtSearch_GotFocus"
-                                 LostKeyboardFocus="TxtSearch_LostFocus"/>
+                                 LostKeyboardFocus="TxtSearch_LostFocus"
+                                 KeyDown="TxtSearch_KeyDown"/>
                         <TextBlock x:Name="TxtPlaceholder" Text="{loc:Tr Text='Поиск…'}" Foreground="{DynamicResource FgMuted}"
                                    Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
                     </Grid>
 
-                    <Button x:Name="BtnTheme" Grid.Column="3" Style="{StaticResource GhostBtn}" FontSize="12.5"
-                            Padding="12,6" Content="{loc:Tr Text='Тема'}" Click="BtnTheme_Click"/>
+                    <Button x:Name="BtnTheme" Grid.Column="4" Content="&#xE790;" FontFamily="Segoe MDL2 Assets"
+                            FontSize="14" Style="{StaticResource WinButton}" Margin="8,0,0,0"
+                            ToolTip="{loc:Tr Text='Тема'}" Click="BtnTheme_Click"/>
 
-                    <Button Grid.Column="4" Content="{loc:Tr Text='Настройки'}" Style="{StaticResource GhostBtn}" FontSize="12.5"
-                            Padding="12,6" Margin="10,0,0,0" Click="BtnSettings_Click"/>
-                    <Button Grid.Column="5" Content="—" Style="{StaticResource WinButton}" Margin="10,0,0,0" Click="BtnMin_Click"/>
-                    <Button x:Name="BtnMax" Grid.Column="6" Content="□" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnMax_Click"/>
-                    <Button Grid.Column="7" Content="✕" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnClose_Click"/>
+                    <Button x:Name="BtnSettings" Grid.Column="5" Content="&#xE713;" FontFamily="Segoe MDL2 Assets"
+                            FontSize="14" Style="{StaticResource WinButton}" Margin="2,0,0,0"
+                            ToolTip="{loc:Tr Text='Настройки'}" Click="BtnSettings_Click"/>
+
+                    <Button Grid.Column="6" Content="—" Style="{StaticResource WinButton}" Margin="10,0,0,0" Click="BtnMin_Click"/>
+                    <Button x:Name="BtnMax" Grid.Column="7" Content="□" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnMax_Click"/>
+                    <Button Grid.Column="8" Content="✕" Style="{StaticResource WinButton}" Margin="4,0,0,0" Click="BtnClose_Click"/>
                 </Grid>
             </Border>
 
@@ -79,6 +93,58 @@
             <Border DockPanel.Dock="Left" Width="222" Background="{DynamicResource BgSurface}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0" Padding="12,16">
                 <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                        <ToggleButton x:Name="BtnCommunityToggle" Style="{StaticResource PacksToggle}"
+                                      Click="BtnCommunityToggle_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{loc:Tr Text='КАТАЛОГИ СООБЩЕСТВА'}" FontSize="10.5" FontWeight="Bold"
+                                           Foreground="{DynamicResource FgMuted}"/>
+                                <TextBlock x:Name="CommunityChevron" Grid.Column="1" Text="▸" FontSize="11"
+                                           Foreground="{DynamicResource FgMuted}"/>
+                            </Grid>
+                        </ToggleButton>
+
+                        <StackPanel x:Name="CommunityPanel" Visibility="Collapsed" Margin="4,6,0,2">
+                            <ItemsControl x:Name="CommunityList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource PresetItem}" Click="CommunityItem_Click"
+                                                ToolTip="{Binding Id}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Count}" FontSize="10.5"
+                                                           Foreground="{DynamicResource FgMuted}"
+                                                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                                <Button Grid.Column="2" Content="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                                        Style="{StaticResource GhostBtn}" FontSize="10" Padding="6,2"
+                                                        Margin="4,0,0,0" Foreground="{DynamicResource FgMuted}"
+                                                        ToolTip="{loc:Tr Text='Удалить пак'}"
+                                                        Click="BtnCommunityDelete_Click"/>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock x:Name="CommunityEmpty"
+                                       Text="{loc:Tr Text='Пока нет каталогов сообщества. Скачанные каталоги появятся здесь.'}"
+                                       Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap"
+                                       Margin="6,2,6,0"/>
+
+                        </StackPanel>
+
+                        <Border Height="1" Background="{DynamicResource Border}" Margin="6,10,6,10"/>
+                    </StackPanel>
+
                     <TextBlock DockPanel.Dock="Top" Text="{loc:Tr Text='КАТЕГОРИИ'}" FontSize="10.5" FontWeight="Bold"
                                Foreground="{DynamicResource FgMuted}" Margin="11,0,0,10"/>
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
@@ -164,7 +230,7 @@
                 </Grid.RowDefinitions>
 
                 <WrapPanel Grid.Row="0" Margin="0,0,0,10">
-                    <Button x:Name="BtnDownload" Content="{loc:Tr Text='Скачать отмеченные'}" Style="{StaticResource PrimaryBtn}"
+                    <Button x:Name="BtnDownload" Content="{loc:Tr Text='Скачать отмеченные'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,8,6" Click="BtnDownload_Click"/>
                     <Button x:Name="BtnDownloadAll" Content="{loc:Tr Text='Скачать всё'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,4,6" Click="BtnDownloadAll_Click"/>
@@ -174,7 +240,7 @@
                             Margin="0,0,4,6" Click="BtnCheck_Click"/>
                     <Button x:Name="BtnOpen" Content="{loc:Tr Text='Открыть папку'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,4,6" Click="BtnOpen_Click"/>
-                    <Button x:Name="BtnAdd" Content="{loc:Tr Text='Добавить'}" Style="{StaticResource SecondaryBtn}"
+                    <Button x:Name="BtnAdd" Content="{loc:Tr Text='Добавить'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,4,6" Click="BtnAdd_Click"/>
                     <Button x:Name="BtnDelete" Content="{loc:Tr Text='Удалить'}" Style="{StaticResource GhostBtn}"
                             Margin="0,0,4,6" Click="BtnDeleteSelected_Click"/>
@@ -251,6 +317,312 @@
 
                 <TextBox x:Name="TxtLog" Grid.Row="2" Style="{StaticResource LogBox}" Height="92"
                          Margin="0,10,0,0" Visibility="Collapsed"/>
+
+                <Grid x:Name="StoreLayer" Grid.Row="0" Grid.RowSpan="2" Background="{DynamicResource OverlayBg}"
+                      Visibility="Collapsed">
+                    <Grid>
+                        <Border x:Name="StoreToast" Panel.ZIndex="10" Background="{DynamicResource BgCard}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="10"
+                                Padding="14,10" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                Margin="0,10,0,0" Visibility="Collapsed" MaxWidth="560">
+                            <TextBlock x:Name="TxtStoreToast" TextWrapping="Wrap" FontSize="12"/>
+                        </Border>
+
+                        <DockPanel x:Name="StoreListPanel">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="BtnStoreBack" Content="&#xE72B;" FontFamily="Segoe MDL2 Assets"
+                                        FontSize="14" Style="{StaticResource WinButton}" Click="BtnStoreBack_Click"
+                                        ToolTip="{loc:Tr Text='Назад'}"/>
+                                <TextBlock Grid.Column="1" Text="{loc:Tr Text='Магазин каталогов'}" FontSize="17"
+                                           FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                <ComboBox x:Name="CmbStoreSort" Grid.Column="2" Width="165" Height="32"
+                                          Margin="10,0,8,0" Style="{StaticResource InputCombo}"
+                                          SelectionChanged="CmbStoreSort_SelectionChanged"/>
+
+                                <Grid Grid.Column="3" Width="230" Height="32" Margin="0,0,8,0">
+                                    <TextBox x:Name="TxtStoreSearch" Style="{StaticResource InputBox}"
+                                             Padding="12,0" TextChanged="TxtStoreSearch_TextChanged"
+                                             GotKeyboardFocus="TxtStoreSearch_GotFocus"
+                                             LostKeyboardFocus="TxtStoreSearch_LostFocus"/>
+                                    <TextBlock x:Name="TxtStorePlaceholder" Text="{loc:Tr Text='Поиск по названию, ID или #тегу…'}"
+                                               Foreground="{DynamicResource FgMuted}" Margin="13,0,0,0"
+                                               VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                </Grid>
+                                <Button x:Name="BtnStorePublish" Grid.Column="4" Content="&#xE710;" FontFamily="Segoe MDL2 Assets"
+                                        FontSize="14" Style="{StaticResource CommunityBtn}"
+                                        Click="BtnStorePublish_Click" ToolTip="{loc:Tr Text='Опубликовать пак'}"/>
+                            </Grid>
+
+                            <TextBlock DockPanel.Dock="Bottom"
+                                       Text="{loc:Tr Text='Все каталоги в этом разделе бесплатны и созданы сообществом. SetupCrate не является их автором, не гарантирует безопасность и не несёт ответственности за готовые сборки приложений.'}"
+                                       Foreground="{DynamicResource FgMuted}" FontSize="11" TextWrapping="Wrap"
+                                       Margin="0,10,0,4"/>
+
+                            <TextBlock x:Name="TxtStoreEmpty" DockPanel.Dock="Bottom"
+                                       Text="{loc:Tr Text='Магазин пока пуст.'}"
+                                       Foreground="{DynamicResource FgMuted}" Visibility="Collapsed"
+                                       Margin="0,10,0,0"/>
+
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="StoreList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource StoreCard}" Click="StoreCard_Click">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <Border Width="17" Height="17" CornerRadius="9" Margin="6,0,0,0"
+                                                                    VerticalAlignment="Center"
+                                                                    Background="{DynamicResource Accent}">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Verified}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="✓" FontSize="10" FontWeight="Bold"
+                                                                           Foreground="{DynamicResource OnAccent}"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </StackPanel>
+
+                                                        <Button Grid.Column="1" Tag="{Binding ChannelUrl}" Click="Channel_Click">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button" BasedOn="{StaticResource ChannelBtn}">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding HasChannel}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+
+                                                        <TextBlock Grid.Column="2" Text="{Binding Author}" FontSize="12"
+                                                                   Foreground="{DynamicResource FgMuted}" Margin="10,0,0,0"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" FontSize="11"
+                                                               Foreground="{DynamicResource FgMuted}"
+                                                               Margin="0,3,0,0"/>
+                                                    <TextBlock Text="{Binding Description}" FontSize="12"
+                                                               Foreground="{DynamicResource FgMuted}"
+                                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                                    <ItemsControl ItemsSource="{Binding Tags}" Margin="0,8,0,0">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Style="{StaticResource TagChip}" Content="{Binding}"
+                                                                        Tag="{Binding}" Click="Tag_Click"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+
+                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <TextBlock Text="{Binding RatingText}" FontSize="11"
+                                                                   Foreground="{DynamicResource FgMuted}"/>
+                                                        <TextBlock Text="{Binding DownloadsText}" FontSize="11"
+                                                                   Foreground="{DynamicResource FgMuted}" Margin="12,0,0,0"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+
+                        <DockPanel x:Name="StorePackPanel" Visibility="Collapsed">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                        Style="{StaticResource WinButton}" Click="BtnStoreBackToList_Click"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                            Margin="10,0,0,0">
+                                    <TextBlock x:Name="TxtPackName" FontSize="17" FontWeight="Bold"
+                                               VerticalAlignment="Center"/>
+                                    <Border x:Name="PackVerifiedBadge" Visibility="Collapsed" Width="18" Height="18"
+                                            CornerRadius="9" Margin="8,0,0,0" VerticalAlignment="Center"
+                                            Background="{DynamicResource Accent}">
+                                        <TextBlock Text="✓" FontSize="11" FontWeight="Bold"
+                                                   Foreground="{DynamicResource OnAccent}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button x:Name="BtnPackChannel" Visibility="Collapsed"
+                                            Style="{StaticResource ChannelBtn}" Click="Channel_Click"/>
+                                </StackPanel>
+                            </Grid>
+
+                                                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button x:Name="BtnPackDownload" Content="{loc:Tr Text='Скачать пак'}"
+                                        Style="{StaticResource PrimaryBtn}" Click="BtnPackDownload_Click"/>
+                                <Button Content="👍" Style="{StaticResource GhostBtn}" Padding="10,6"
+                                        Margin="8,0,0,0" Click="BtnVoteUp_Click"/>
+                                <Button Content="👎" Style="{StaticResource GhostBtn}" Padding="10,6"
+                                        Margin="4,0,0,0" Click="BtnVoteDown_Click"/>
+                                <Button x:Name="BtnPackReport" Content="⚑" Style="{StaticResource ReportBtn}"
+                                        Margin="4,0,0,0" Click="BtnPackReport_Click"
+                                        ToolTip="{loc:Tr Text='Пожаловаться на сборку'}"/>
+                                <TextBlock x:Name="TxtPackStatus" Foreground="{DynamicResource FgMuted}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            </StackPanel>
+
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" CornerRadius="10" Padding="16,14">
+                                        <StackPanel>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock x:Name="TxtPackAuthor" FontSize="13" FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="TxtPackStats" Grid.Column="1" FontSize="12"
+                                                           Foreground="{DynamicResource FgMuted}"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+
+                                            <TextBlock x:Name="TxtPackAuthorNote" FontSize="11" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource FgMuted}" Margin="0,4,0,0"/>
+
+                                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                                <Button x:Name="BtnPackId" Style="{StaticResource GhostBtn}"
+                                                        Padding="8,3" FontSize="11" Cursor="Hand"
+                                                        Background="{DynamicResource BgSurface}"
+                                                        BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                        Foreground="{DynamicResource Accent}"
+                                                        ToolTip="{loc:Tr Text='Нажми, чтобы скопировать ID'}"
+                                                        Click="BtnPackId_Click"/>
+                                                <TextBlock x:Name="TxtPackTags" FontSize="11" VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource Accent}" Margin="12,0,0,0"/>
+                                            </StackPanel>
+
+                                            <TextBlock x:Name="TxtPackDescription" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <TextBlock Text="{loc:Tr Text='Программы в паке'}" FontWeight="SemiBold"
+                                               Margin="2,18,0,8"/>
+                                    <ItemsControl x:Name="PackAppsList">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="{DynamicResource CardBg}" BorderBrush="{DynamicResource Border}"
+                                                        BorderThickness="1" CornerRadius="8" Padding="14,10" Margin="0,0,0,8">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Notes}" FontSize="12"
+                                                                   Foreground="{DynamicResource FgMuted}" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+
+                        <DockPanel x:Name="StorePublishPanel" Visibility="Collapsed">
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Content="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                        Style="{StaticResource WinButton}" Click="BtnStoreBackToList_Click"/>
+                                <TextBlock Grid.Column="1" Text="{loc:Tr Text='Публикация пака'}" FontSize="17"
+                                           FontWeight="Bold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button x:Name="BtnPublishSend" Content="{loc:Tr Text='Отправить в магазин'}"
+                                        Style="{StaticResource PrimaryBtn}" IsEnabled="False"
+                                        Click="BtnPublishSend_Click"/>
+                                <TextBlock x:Name="TxtPublishStatus" Foreground="{DynamicResource FgMuted}"
+                                           VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="{loc:Tr Text='Что публикуем'}" FontWeight="SemiBold"
+                                                       Margin="0,0,0,10"/>
+                                            <TextBlock Text="{loc:Tr Text='Категория для публикации'}" Margin="0,0,0,6"/>
+                                            <ComboBox x:Name="CmbPublishCategory" Style="{StaticResource InputCombo}"
+                                                      SelectionChanged="CmbPublishCategory_SelectionChanged"/>
+                                            <TextBlock x:Name="TxtPublishApps" Foreground="{DynamicResource FgMuted}"
+                                                       Margin="0,8,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource BgCard}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" CornerRadius="10" Padding="16,14">
+                                        <StackPanel>
+                                            <TextBlock Text="{loc:Tr Text='Описание для магазина'}" FontWeight="SemiBold"
+                                                       Margin="0,0,0,10"/>
+
+                                            <TextBlock Text="{loc:Tr Text='Название'}" Margin="0,0,0,6"/>
+                                            <TextBox x:Name="TxtPublishName" Style="{StaticResource InputBox}"
+                                                     TextChanged="TxtPublishName_TextChanged"/>
+
+                                            <Grid Margin="0,12,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{loc:Tr Text='Автор'}" Margin="0,0,0,6"/>
+                                                    <TextBox x:Name="TxtPublishAuthor" Style="{StaticResource InputBox}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2">
+                                                    <TextBlock Text="{loc:Tr Text='Теги (через запятую)'}" Margin="0,0,0,6"/>
+                                                    <TextBox x:Name="TxtPublishTags" Style="{StaticResource InputBox}"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <TextBlock Text="{loc:Tr Text='Короткое описание'}" Margin="0,12,0,6"/>
+                                            <TextBox x:Name="TxtPublishDescription" Style="{StaticResource InputBoxArea}"
+                                                     Height="72" TextWrapping="Wrap"/>
+
+
+                                        </StackPanel>
+                                    </Border>
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Grid>
+                </Grid>
             </Grid>
         </DockPanel>
     </Border>

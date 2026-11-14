@@ -9,6 +9,7 @@ namespace SetupCrate;
 public partial class AboutWindow : Window
 {
     private const string ProjectUrl = "https://github.com/MataXZX/SetupCrate";
+    private const string DonateUrl = "https://boosty.to/mataxzx/donate";
 
     public AboutWindow()
     {
@@ -29,9 +30,7 @@ public partial class AboutWindow : Window
 
     private void BtnSite_Click(object sender, RoutedEventArgs e) => Open(ProjectUrl);
 
-    private void BtnThanks_Click(object sender, RoutedEventArgs e)
-    {
-    }
+    private void BtnThanks_Click(object sender, RoutedEventArgs e) => Open(DonateUrl);
 
     private void BtnLicense_Click(object sender, RoutedEventArgs e) => Open(ProjectUrl + "/blob/main/LICENSE");
 
